@@ -9,6 +9,9 @@ import { registerForPushNotificationsAsync, scheduleCycleNotifications } from '@
 import { Ionicons } from '@expo/vector-icons';
 import moment from 'moment';
 import RatingPrompt from '@/components/RatingPrompt';
+import PremiumModal from '@/components/PremiumModal';
+import { setPremium } from '@/store/slices/periodSlice';
+import { useDispatch } from 'react-redux';
 
 const { width } = Dimensions.get('window');
 const CIRCLE_SIZE = width * 0.72;
@@ -43,32 +46,38 @@ function useCycleCalculations() {
   let statusLabel: string;
   let statusColor: string;
   let circleColor: string;
+  let healthTip: string;
 
   if (isInPeriod) {
     phase = 'period';
     statusLabel = 'Period';
     statusColor = Colors.primary;
     circleColor = Colors.primary;
+    healthTip = 'Stay hydrated and get plenty of rest.';
   } else if (isOvulationDay) {
     phase = 'ovulation';
     statusLabel = 'Ovulation day';
     statusColor = Colors.orange;
     circleColor = Colors.orange;
+    healthTip = 'Highest chance of pregnancy today.';
   } else if (isInFertile) {
     phase = 'fertile';
-    statusLabel = 'High chance\nof pregnancy';
+    statusLabel = 'Fertile window';
     statusColor = Colors.green;
     circleColor = Colors.green;
+    healthTip = 'High chance of pregnancy.';
   } else if (currentDay < cycleLength / 2) {
     phase = 'follicular';
-    statusLabel = `${daysUntilPeriod} days\nuntil period`;
+    statusLabel = `${daysUntilPeriod} days until period`;
     statusColor = Colors.blue;
     circleColor = Colors.blue;
+    healthTip = 'Energy levels may be rising.';
   } else {
     phase = 'luteal';
-    statusLabel = `${daysUntilPeriod} days\nuntil period`;
+    statusLabel = `${daysUntilPeriod} days until period`;
     statusColor = Colors.purple;
     circleColor = Colors.purple;
+    healthTip = 'You might feel more sensitive now.';
   }
 
   const progressFraction = currentDay / cycleLength;
@@ -88,6 +97,7 @@ function useCycleCalculations() {
     isInFertile,
     isOvulationDay,
     isInPeriod,
+    healthTip,
   };
 }
 
@@ -139,6 +149,7 @@ function PulsingCircle({ color, progress }: { color: string; progress: number })
 
 export default function TodayScreen() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const calcs = useCycleCalculations();
   
   useEffect(() => {
@@ -148,9 +159,25 @@ export default function TodayScreen() {
     });
   }, []);
 
-  const { dailyLogs } = useSelector((state: RootState) => state.period);
+  const { dailyLogs, isPremium } = useSelector((state: RootState) => state.period);
   const today = moment().format('YYYY-MM-DD');
   const todayLog = (dailyLogs || {})[today];
+
+  const [paywallVisible, setPaywallVisible] = useState(false);
+
+  useEffect(() => {
+    // Auto-open log if not filled today
+    if (!todayLog) {
+      setTimeout(() => {
+        router.push('/log-day');
+      }, 1500);
+    } else if (!isPremium) {
+      // Show paywall if not premium and logged today
+      setTimeout(() => {
+        setPaywallVisible(true);
+      }, 2000);
+    }
+  }, []);
 
   const articles = [
     {
@@ -193,6 +220,11 @@ export default function TodayScreen() {
           <Text style={styles.cycleDay}>Cycle day {currentDay}</Text>
         </View>
         <View style={styles.topRight}>
+          {!isPremium && (
+            <TouchableOpacity style={styles.premiumHeaderBtn} onPress={() => router.push('/paywall')}>
+              <Ionicons name="ribbon" size={22} color={Colors.orange} />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/reminders')}>
             <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
           </TouchableOpacity>
@@ -217,6 +249,8 @@ export default function TodayScreen() {
             
             {/* Content overlay */}
             <View style={styles.circleOverlay}>
+              <Text style={styles.circleDayNumber}>{currentDay}</Text>
+              <Text style={styles.circleDayText}>Cycle Day</Text>
               <Text style={[styles.statusLabel, { color: circleColor }]}>{statusLabel}</Text>
               <View style={[styles.phaseBadge, { backgroundColor: circleColor + '20' }]}>
                 <View style={[styles.phaseDot, { backgroundColor: circleColor }]} />
@@ -227,6 +261,7 @@ export default function TodayScreen() {
                    phase === 'follicular' ? 'Follicular phase' : 'Luteal phase'}
                 </Text>
               </View>
+              <Text style={styles.healthTipText}>{calcs.healthTip}</Text>
             </View>
           </View>
 
@@ -280,7 +315,7 @@ export default function TodayScreen() {
         {/* Today's Log Summary */}
         {todayLog && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Today's log</Text>
+            <Text style={styles.sectionTitle}>Today&apos;s log</Text>
             <View style={styles.logSummaryCard}>
               {todayLog.flow && (
                 <View style={styles.logTag}>
@@ -346,6 +381,14 @@ export default function TodayScreen() {
         <View style={{ height: 80 }} />
       </ScrollView>
       <RatingPrompt />
+      <PremiumModal 
+        visible={paywallVisible} 
+        onClose={() => setPaywallVisible(false)}
+        onSubscribe={() => {
+          dispatch(setPremium(true));
+          setPaywallVisible(false);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -365,6 +408,11 @@ const styles = StyleSheet.create({
   dateText: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
   cycleDay: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
   topRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  premiumHeaderBtn: {
+    padding: 6,
+    backgroundColor: Colors.orange + '15',
+    borderRadius: 10,
+  },
   notifBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   avatarBtn: {},
   avatar: {
@@ -428,11 +476,32 @@ const styles = StyleSheet.create({
   circleInner: { borderWidth: 1 },
   circleCore: {},
   statusLabel: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
     textAlign: 'center',
-    lineHeight: 30,
-    marginBottom: Spacing.md,
+    lineHeight: 24,
+    marginBottom: Spacing.sm,
+  },
+  circleDayNumber: {
+    fontSize: 64,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    marginBottom: 0,
+  },
+  circleDayText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    fontWeight: '600',
+    marginBottom: Spacing.sm,
+    textTransform: 'uppercase',
+  },
+  healthTipText: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    marginTop: Spacing.md,
+    fontWeight: '500',
+    textAlign: 'center',
+    paddingHorizontal: Spacing.xl,
   },
   phaseBadge: {
     flexDirection: 'row',

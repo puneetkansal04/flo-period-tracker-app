@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar, TextInput } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useDispatch, useSelector } from 'react-redux';
-import { logDay } from '@/store/slices/periodSlice';
+import { logDay, logWeight, logWater } from '@/store/slices/periodSlice';
 import { RootState } from '@/store';
 import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,11 +33,16 @@ export default function LogDayScreen() {
   const params = useLocalSearchParams();
   const dispatch = useDispatch();
   const logDate = (params.date as string) || moment().format('YYYY-MM-DD');
-  const existingLog = useSelector((s: RootState) => s.period.dailyLogs[logDate]);
+  const { dailyLogs, weightLogs, waterLogs } = useSelector((s: RootState) => s.period);
+  const existingLog = (dailyLogs || {})[logDate];
+  const existingWeight = (weightLogs || {})[logDate];
+  const existingWater = (waterLogs || {})[logDate];
 
   const [flow, setFlow] = useState<FlowType>(existingLog?.flow);
   const [moods, setMoods] = useState<string[]>(existingLog?.moods || []);
   const [symptoms, setSymptoms] = useState<string[]>(existingLog?.symptoms || []);
+  const [weight, setWeight] = useState<string>(existingWeight ? existingWeight.toString() : '');
+  const [water, setWater] = useState<number>(existingWater || 0);
 
   const toggleMood = (key: string) => {
     setMoods(prev => prev.includes(key) ? prev.filter(m => m !== key) : [...prev, key]);
@@ -48,6 +53,8 @@ export default function LogDayScreen() {
 
   const handleSave = () => {
     dispatch(logDay({ date: logDate, log: { flow, moods, symptoms } }));
+    if (weight) dispatch(logWeight({ date: logDate, weight: parseFloat(weight) }));
+    dispatch(logWater({ date: logDate, water }));
     router.back();
   };
 
@@ -85,7 +92,10 @@ export default function LogDayScreen() {
                 activeOpacity={0.8}
               >
                 <Text style={styles.flowEmoji}>{opt.emoji}</Text>
-                <Text style={[styles.flowLabel, flow === opt.key && styles.flowLabelSelected]}>
+                <Text style={[
+                  styles.flowLabel, 
+                  flow === opt.key && { color: Colors.white, fontWeight: '700' }
+                ]}>
                   {opt.label}
                 </Text>
               </TouchableOpacity>
@@ -129,6 +139,45 @@ export default function LogDayScreen() {
                 selected={symptoms.includes(s.key)}
                 onPress={() => toggleSymptom(s.key)}
               />
+            ))}
+          </View>
+        </View>
+
+        {/* Weight */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionIcon}>⚖️</Text>
+            <Text style={styles.sectionTitle}>Weight</Text>
+          </View>
+          <View style={styles.weightInputRow}>
+            <TextInput
+              style={styles.weightInput}
+              placeholder="0.0"
+              keyboardType="numeric"
+              value={weight}
+              onChangeText={setWeight}
+            />
+            <Text style={styles.weightUnit}>kg</Text>
+          </View>
+        </View>
+
+        {/* Water */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionIcon}>💧</Text>
+            <Text style={styles.sectionTitle}>Water</Text>
+          </View>
+          <View style={styles.waterRow}>
+            {[250, 500, 750, 1000].map((amount) => (
+              <TouchableOpacity
+                key={amount}
+                style={[styles.waterBtn, water === amount && styles.waterBtnActive]}
+                onPress={() => setWater(amount)}
+              >
+                <Text style={[styles.waterBtnText, water === amount && styles.waterBtnTextActive]}>
+                  {amount}ml
+                </Text>
+              </TouchableOpacity>
             ))}
           </View>
         </View>
@@ -203,4 +252,21 @@ const styles = StyleSheet.create({
   chipEmoji: { fontSize: 16 },
   chipLabel: { fontSize: 13, color: Colors.textPrimary, fontWeight: '500' },
   chipLabelSelected: { color: Colors.primary, fontWeight: '600' },
+  
+  // Weight & Water
+  weightInputRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  weightInput: { 
+    flex: 1, backgroundColor: Colors.white, padding: Spacing.md, 
+    borderRadius: BorderRadius.lg, fontSize: 18, fontWeight: '600', color: Colors.textPrimary 
+  },
+  weightUnit: { fontSize: 16, color: Colors.textSecondary, fontWeight: '600' },
+  waterRow: { flexDirection: 'row', gap: Spacing.sm },
+  waterBtn: { 
+    flex: 1, backgroundColor: Colors.white, borderRadius: BorderRadius.lg, 
+    padding: Spacing.sm, alignItems: 'center', justifyContent: 'center', gap: 4,
+    borderWidth: 1.5, borderColor: Colors.border
+  },
+  waterBtnActive: { backgroundColor: Colors.blue, borderColor: Colors.blue },
+  waterBtnText: { fontSize: 12, fontWeight: '600', color: Colors.textSecondary },
+  waterBtnTextActive: { color: Colors.white },
 });

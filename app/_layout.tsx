@@ -8,7 +8,11 @@ import { store, persistor } from '@/store';
 import { RootState } from '@/store';
 import { useEffect } from 'react';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import * as SplashScreen from 'expo-splash-screen';
 import { registerForPushNotificationsAsync } from '@/utils/notifications';
+
+// Prevent the splash screen from auto-hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync();
 
 function NavigationGuard() {
   const segments = useSegments();
@@ -37,7 +41,8 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   useEffect(() => {
-    // registerForPushNotificationsAsync();
+    // Hide the splash screen after the app is ready.
+    SplashScreen.hideAsync();
   }, []);
 
   const customTheme = {

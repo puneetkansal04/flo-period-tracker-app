@@ -22,7 +22,7 @@ const getLabel = (key: string) => {
 
 export default function InsightsScreen() {
   const router = useRouter();
-  const { cycleLength, periodLength, dailyLogs, lastPeriodDate, periodHistory } = useSelector(
+  const { cycleLength, periodLength, dailyLogs, lastPeriodDate, periodHistory, weightLogs, waterLogs } = useSelector(
     (s: RootState) => s.period
   );
 
@@ -185,6 +185,67 @@ export default function InsightsScreen() {
                 chartConfig={{
                   ...chartConfig,
                   color: (opacity = 1) => `rgba(165, 94, 234, ${opacity})`, // Purple bars
+                }}
+                showValuesOnTopOfBars={true}
+                fromZero={true}
+                withInnerLines={false}
+              />
+            </View>
+          </View>
+        )}
+        {/* Weight Trend Chart */}
+        {Object.keys(weightLogs || {}).length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Weight trend (kg)</Text>
+            <View style={styles.chartContainer}>
+              <LineChart
+                data={{
+                  labels: Object.keys(weightLogs || {}).sort().slice(-7).map(d => moment(d).format('DD/MM')),
+                  datasets: [
+                    {
+                      data: Object.keys(weightLogs || {}).sort().slice(-7).map(d => weightLogs[d]),
+                      color: (opacity = 1) => `rgba(74, 144, 226, ${opacity})`,
+                      strokeWidth: 3
+                    }
+                  ]
+                }}
+                width={screenWidth - Spacing.base * 2 - 20}
+                height={220}
+                chartConfig={{
+                  ...chartConfig,
+                  color: (opacity = 1) => `rgba(74, 144, 226, ${opacity})`,
+                }}
+                bezier
+                style={{
+                  marginVertical: 8,
+                  borderRadius: 16
+                }}
+              />
+            </View>
+          </View>
+        )}
+
+        {/* Water Intake Chart */}
+        {Object.keys(waterLogs || {}).length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Water Intake (ml)</Text>
+            <View style={styles.chartContainer}>
+              <BarChart
+                data={{
+                  labels: Object.keys(waterLogs || {}).sort().slice(-7).map(d => moment(d).format('DD/MM')),
+                  datasets: [
+                    {
+                      data: Object.keys(waterLogs || {}).sort().slice(-7).map(d => waterLogs[d])
+                    }
+                  ]
+                }}
+                width={screenWidth - Spacing.base * 2 - 20}
+                height={220}
+                yAxisLabel=""
+                yAxisSuffix="ml"
+                chartConfig={{
+                  ...chartConfig,
+                  color: (opacity = 1) => `rgba(0, 184, 212, ${opacity})`, // Cyan for water
                 }}
                 showValuesOnTopOfBars={true}
                 fromZero={true}

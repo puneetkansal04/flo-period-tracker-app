@@ -47,6 +47,10 @@ export interface PeriodState {
   // Plan
   isPremium: boolean;
 
+  // Logs
+  weightLogs: { [date: string]: number };
+  waterLogs: { [date: string]: number }; // in ml
+
   // Rating
   hasRated: boolean;
   lastRatingPromptDate: string | null; // ISO string
@@ -78,6 +82,8 @@ const initialState: PeriodState = {
   name: null,
   email: null,
   isPremium: false,
+  weightLogs: {},
+  waterLogs: {},
   hasRated: false,
   lastRatingPromptDate: null,
 };
@@ -163,6 +169,12 @@ const periodSlice = createSlice({
     setPremium(state, action: PayloadAction<boolean>) {
       state.isPremium = action.payload;
     },
+    logWeight(state, action: PayloadAction<{ date: string; weight: number }>) {
+      state.weightLogs[action.payload.date] = action.payload.weight;
+    },
+    logWater(state, action: PayloadAction<{ date: string; water: number }>) {
+      state.waterLogs[action.payload.date] = action.payload.water;
+    },
     setHasRated(state, action: PayloadAction<boolean>) {
       state.hasRated = action.payload;
     },
@@ -197,6 +209,8 @@ export const {
   resetOnboarding,
   updatePeriodData,
   setPremium,
+  logWeight,
+  logWater,
   setHasRated,
   setLastRatingPromptDate,
 } = periodSlice.actions;
