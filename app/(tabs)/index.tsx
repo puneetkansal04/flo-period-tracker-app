@@ -8,6 +8,7 @@ import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
 import { registerForPushNotificationsAsync, scheduleCycleNotifications } from '@/utils/notifications';
 import { Ionicons } from '@expo/vector-icons';
 import moment from 'moment';
+import RatingPrompt from '@/components/RatingPrompt';
 
 const { width } = Dimensions.get('window');
 const CIRCLE_SIZE = width * 0.72;
@@ -342,8 +343,9 @@ export default function TodayScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={{ height: 30 }} />
+        <View style={{ height: 80 }} />
       </ScrollView>
+      <RatingPrompt />
     </SafeAreaView>
   );
 }
@@ -370,7 +372,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center',
   },
   avatarText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
-  scroll: { paddingBottom: Spacing['4xl'] },
+  scroll: { paddingBottom: Spacing['5xl'] },
 
   // Circle
   circleSection: {

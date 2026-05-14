@@ -43,6 +43,13 @@ export interface PeriodState {
   // User profile
   name: string | null;
   email: string | null;
+
+  // Plan
+  isPremium: boolean;
+
+  // Rating
+  hasRated: boolean;
+  lastRatingPromptDate: string | null; // ISO string
 }
 
 const initialState: PeriodState = {
@@ -70,6 +77,9 @@ const initialState: PeriodState = {
 
   name: null,
   email: null,
+  isPremium: false,
+  hasRated: false,
+  lastRatingPromptDate: null,
 };
 
 const periodSlice = createSlice({
@@ -150,6 +160,15 @@ const periodSlice = createSlice({
     updatePeriodData(state, action: PayloadAction<Partial<PeriodState>>) {
       Object.assign(state, action.payload);
     },
+    setPremium(state, action: PayloadAction<boolean>) {
+      state.isPremium = action.payload;
+    },
+    setHasRated(state, action: PayloadAction<boolean>) {
+      state.hasRated = action.payload;
+    },
+    setLastRatingPromptDate(state, action: PayloadAction<string>) {
+      state.lastRatingPromptDate = action.payload;
+    },
   },
 });
 
@@ -177,6 +196,9 @@ export const {
   setEmail,
   resetOnboarding,
   updatePeriodData,
+  setPremium,
+  setHasRated,
+  setLastRatingPromptDate,
 } = periodSlice.actions;
 
 export default periodSlice.reducer;
