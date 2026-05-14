@@ -4,6 +4,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Ionicons } from '@expo/vector-icons';
 import { usePeriodTracker } from '@/hooks/usePeriodTracker';
+import moment from 'moment';
 
 const { width } = Dimensions.get('window');
 
@@ -20,19 +21,20 @@ export default function HomeScreen() {
   const predictionText = daysUntilOvulation > 0 ? `Ovulation in ${daysUntilOvulation} days` : "Ovulation today";
 
   // Premium colors
-  const primaryColor = '#FF5A76'; // Soft pink
-  const secondaryColor = '#8A56AC'; // Purple
-  const backgroundColor = isDark ? '#121212' : '#F9F9F9';
-  const cardBgColor = isDark ? '#1E1E1E' : '#FFFFFF';
-  const textColor = isDark ? '#FFFFFF' : '#333333';
-  const subTextColor = isDark ? '#AAAAAA' : '#666666';
+  // Serene Cycle Premium Colors
+  const primaryColor = '#f4a7b9'; // Soft pink
+  const secondaryColor = '#ad8b91'; // Tertiary Mauve
+  const backgroundColor = isDark ? '#121212' : '#faf9f6'; // Warm neutral
+  const cardBgColor = isDark ? '#1E1E1E' : '#ffffff'; // Pure white
+  const textColor = isDark ? '#ffffff' : '#2d2d2d'; // Charcoal
+  const subTextColor = isDark ? '#aaaaaa' : '#524346'; // Muted dark
 
   return (
     <ScrollView style={[styles.container, { backgroundColor }]}>
       {/* Header */}
       <ThemedView style={[styles.header, { backgroundColor }]}>
         <ThemedView style={styles.headerLeft}>
-          <ThemedText type="title" style={styles.title}>May 14</ThemedText>
+          <ThemedText type="title" style={styles.title}>{moment().format('MMMM D')}</ThemedText>
           <ThemedText style={[styles.subtitle, { color: subTextColor }]}>Cycle Day {currentDay}</ThemedText>
         </ThemedView>
         <TouchableOpacity style={styles.profileButton}>
@@ -42,7 +44,7 @@ export default function HomeScreen() {
 
       {/* Main Circular Status */}
       <ThemedView style={[styles.statusContainer, { backgroundColor }]}>
-        <ThemedView style={[styles.outerCircle, { borderColor: isDark ? '#333' : '#E0E0E0' }]}>
+        <ThemedView style={[styles.outerCircle, { borderColor: isDark ? '#333' : primaryColor }]}>
           <ThemedView style={[styles.innerCircle, { backgroundColor: cardBgColor }]}>
             <ThemedText style={[styles.circleText, { color: primaryColor }]}>{statusText}</ThemedText>
             <ThemedText style={[styles.circleSubText, { color: subTextColor }]}>{predictionText}</ThemedText>
