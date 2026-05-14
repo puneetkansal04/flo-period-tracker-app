@@ -174,24 +174,13 @@ export default function SettingsScreen() {
             />
             <View style={styles.divider} />
             <SettingRow
-              icon={<Ionicons name="lock-closed-outline" size={20} color={Colors.green} />}
-              label="Privacy & security"
-              color={Colors.green}
-              onPress={() => router.push('/generic-setting?title=Privacy%20%26%20security')}
-            />
-            <View style={styles.divider} />
-            <SettingRow
-              icon={<Ionicons name="help-circle-outline" size={20} color={Colors.blue} />}
-              label="Help & support"
-              color={Colors.blue}
-              onPress={() => router.push('/generic-setting?title=Help%20%26%20support')}
-            />
-            <View style={styles.divider} />
-            <SettingRow
               icon={<Ionicons name="star-outline" size={20} color={Colors.orange} />}
               label="Rate the app"
               color={Colors.orange}
-              onPress={() => router.push('/generic-setting?title=Rate%20the%20app')}
+              onPress={() => {
+                // This will be handled by the daily prompt too, but manual trigger is good
+                Alert.alert("Rate us", "Thank you for using Serene Cycle!");
+              }}
             />
           </View>
         </View>
