@@ -4,7 +4,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useRouter } from 'expo-router';
 
-export default function BirthYearScreen() {
+export default function CycleLengthScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -15,47 +15,43 @@ export default function BirthYearScreen() {
   const subTextColor = isDark ? '#AAAAAA' : '#666666';
   const primaryColor = '#FF5A76';
 
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [selectedLength, setSelectedLength] = useState<number>(28);
 
-  // Generate years from 1950 to current year
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: currentYear - 1950 + 1 }, (_, i) => currentYear - i);
+  // Generate cycle lengths from 20 to 45
+  const lengths = Array.from({ length: 45 - 20 + 1 }, (_, i) => 20 + i);
 
   const handleNext = () => {
-    if (selectedYear) {
-      // Save to state or context later
-      router.push('/onboarding/goal');
-    }
+    router.push('/onboarding/period-length');
   };
 
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
       <ThemedView style={[styles.content, { backgroundColor }]}>
-        <ThemedText type="title" style={[styles.title, { color: textColor }]}>When were you born?</ThemedText>
+        <ThemedText type="title" style={[styles.title, { color: textColor }]}>How long is your cycle?</ThemedText>
         <ThemedText style={[styles.subtitle, { color: subTextColor }]}>
-          Your cycle can change with age. Knowing it helps us make better predictions.
+          The number of days between the first day of one period and the first day of the next.
         </ThemedText>
 
         <FlatList
-          data={years}
+          data={lengths}
           keyExtractor={(item) => item.toString()}
           style={styles.list}
           renderItem={({ item }) => (
             <TouchableOpacity 
               style={[
-                styles.yearItem, 
+                styles.item, 
                 { 
-                  backgroundColor: selectedYear === item ? primaryColor : cardBgColor,
-                  borderColor: selectedYear === item ? primaryColor : (isDark ? '#333' : '#E0E0E0')
+                  backgroundColor: selectedLength === item ? primaryColor : cardBgColor,
+                  borderColor: selectedLength === item ? primaryColor : (isDark ? '#333' : '#E0E0E0')
                 }
               ]}
-              onPress={() => setSelectedYear(item)}
+              onPress={() => setSelectedLength(item)}
             >
               <ThemedText style={[
-                styles.yearText, 
-                { color: selectedYear === item ? '#FFFFFF' : textColor }
+                styles.itemText, 
+                { color: selectedLength === item ? '#FFFFFF' : textColor }
               ]}>
-                {item}
+                {item} days
               </ThemedText>
             </TouchableOpacity>
           )}
@@ -63,9 +59,8 @@ export default function BirthYearScreen() {
 
         <ThemedView style={styles.buttonContainer}>
           <TouchableOpacity 
-            style={[styles.button, { backgroundColor: selectedYear ? primaryColor : subTextColor }]} 
+            style={[styles.button, { backgroundColor: primaryColor }]} 
             onPress={handleNext}
-            disabled={!selectedYear}
           >
             <ThemedText style={[styles.buttonText, { color: '#FFFFFF' }]}>Next</ThemedText>
           </TouchableOpacity>
@@ -100,7 +95,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginBottom: 20,
   },
-  yearItem: {
+  item: {
     height: 60,
     borderRadius: 12,
     alignItems: 'center',
@@ -113,7 +108,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  yearText: {
+  itemText: {
     fontSize: 18,
     fontWeight: '600',
   },
