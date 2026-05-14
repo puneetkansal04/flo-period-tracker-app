@@ -3,6 +3,7 @@ import { StyleSheet, ScrollView, TouchableOpacity, useColorScheme, Dimensions } 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Ionicons } from '@expo/vector-icons';
+import { usePeriodTracker } from '@/hooks/usePeriodTracker';
 
 const { width } = Dimensions.get('window');
 
@@ -10,11 +11,13 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  // Mock data for now
-  const cycleDay = 5;
-  const cycleLength = 28;
-  const statusText = "Period: Day 5";
-  const predictionText = "Ovulation in 9 days";
+  const { data, calculations } = usePeriodTracker();
+  const { currentDay, statusText, chancesOfPregnancy } = calculations;
+  
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const daysUntilOvulation = Math.ceil((calculations.ovulationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const predictionText = daysUntilOvulation > 0 ? `Ovulation in ${daysUntilOvulation} days` : "Ovulation today";
 
   // Premium colors
   const primaryColor = '#FF5A76'; // Soft pink
@@ -30,7 +33,7 @@ export default function HomeScreen() {
       <ThemedView style={[styles.header, { backgroundColor }]}>
         <ThemedView style={styles.headerLeft}>
           <ThemedText type="title" style={styles.title}>May 14</ThemedText>
-          <ThemedText style={[styles.subtitle, { color: subTextColor }]}>Cycle Day {cycleDay}</ThemedText>
+          <ThemedText style={[styles.subtitle, { color: subTextColor }]}>Cycle Day {currentDay}</ThemedText>
         </ThemedView>
         <TouchableOpacity style={styles.profileButton}>
           <Ionicons name="person-circle-outline" size={32} color={primaryColor} />
@@ -77,7 +80,7 @@ export default function HomeScreen() {
         <ThemedText type="subtitle" style={[styles.sectionTitle, { color: textColor }]}>Daily Insights</ThemedText>
         <ThemedView style={[styles.insightCard, { backgroundColor: cardBgColor }]}>
           <ThemedText style={[styles.insightTitle, { color: primaryColor }]}>Chances of getting pregnant</ThemedText>
-          <ThemedText style={[styles.insightValue, { color: textColor }]}>Low</ThemedText>
+          <ThemedText style={[styles.insightValue, { color: textColor }]}>{chancesOfPregnancy}</ThemedText>
           <ThemedText style={[styles.insightDescription, { color: subTextColor }]}>
             Based on your cycle history, today is not a fertile day.
           </ThemedText>
