@@ -37,10 +37,20 @@ export default function PremiumModal({ visible, onClose, onSubscribe }: {
           </View>
 
           <View style={styles.features}>
-            {features.map((f, i) => (
+            {[
+              { icon: 'calendar-outline', title: 'Advanced cycle predictions', sub: 'Know exactly when your period starts' },
+              { icon: 'stats-chart-outline', title: 'Daily health insights', sub: 'Personalized tips for your cycle phase' },
+              { icon: 'analytics-outline', title: 'Symptom analysis', sub: 'Deep dive into your body patterns' },
+              { icon: 'shield-checkmark-outline', title: 'Privacy & Security', sub: 'Your data is 100% private and safe' },
+            ].map((f, i) => (
               <View key={i} style={styles.featureRow}>
-                <Ionicons name={f.icon as any} size={20} color={Colors.primary} style={{ width: 30 }} />
-                <Text style={styles.featureTitle}>{f.title}</Text>
+                <View style={styles.featureIconContainer}>
+                  <Ionicons name={f.icon as any} size={24} color={Colors.primary} />
+                </View>
+                <View>
+                  <Text style={styles.featureTitle}>{f.title}</Text>
+                  <Text style={styles.featureSub}>{f.sub}</Text>
+                </View>
               </View>
             ))}
           </View>
@@ -81,6 +91,9 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     padding: 8,
   },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: 8 },
+  sectionIconBg: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  sectionIcon: { fontSize: 20 },
   header: {
     alignItems: 'center',
     marginBottom: Spacing.xl,
@@ -103,12 +116,13 @@ const styles = StyleSheet.create({
     marginBottom: Spacing['2xl'],
     gap: Spacing.md,
   },
-  featureRow: {
-    flexDirection: 'row', alignItems: 'center',
+  featureIconContainer: { 
+    width: 44, height: 44, borderRadius: 12, 
+    backgroundColor: Colors.primary + '10', 
+    alignItems: 'center', justifyContent: 'center', marginRight: Spacing.md 
   },
-  featureTitle: {
-    fontSize: 16, fontWeight: '600', color: Colors.textPrimary,
-  },
+  featureTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
+  featureSub: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
   subscribeBtn: {
     backgroundColor: Colors.primary,
     paddingVertical: 16,

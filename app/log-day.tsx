@@ -76,7 +76,9 @@ export default function LogDayScreen() {
         {/* Period Flow */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionIcon}>💧</Text>
+            <View style={[styles.sectionIconBg, { backgroundColor: Colors.primaryBg }]}>
+              <Ionicons name="water" size={18} color={Colors.primary} />
+            </View>
             <Text style={styles.sectionTitle}>Period</Text>
           </View>
           <Text style={styles.sectionSubtitle}>How heavy is your flow today?</Text>
@@ -86,7 +88,7 @@ export default function LogDayScreen() {
                 key={opt.key}
                 style={[
                   styles.flowBtn,
-                  flow === opt.key && { backgroundColor: opt.color, borderColor: Colors.primary },
+                  flow === opt.key && { backgroundColor: Colors.primary, borderColor: Colors.primary },
                 ]}
                 onPress={() => setFlow(flow === opt.key ? undefined : opt.key as FlowType)}
                 activeOpacity={0.8}
@@ -106,7 +108,9 @@ export default function LogDayScreen() {
         {/* Moods */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionIcon}>😊</Text>
+            <View style={[styles.sectionIconBg, { backgroundColor: '#EDE9FE' }]}>
+              <Ionicons name="happy" size={18} color="#8B5CF6" />
+            </View>
             <Text style={styles.sectionTitle}>Mood</Text>
           </View>
           <Text style={styles.sectionSubtitle}>How are you feeling today?</Text>
@@ -126,7 +130,9 @@ export default function LogDayScreen() {
         {/* Symptoms */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionIcon}>⚡</Text>
+            <View style={[styles.sectionIconBg, { backgroundColor: '#FFEDD5' }]}>
+              <Ionicons name="flash" size={18} color="#F59E0B" />
+            </View>
             <Text style={styles.sectionTitle}>Symptoms</Text>
           </View>
           <Text style={styles.sectionSubtitle}>Any physical symptoms?</Text>
@@ -146,7 +152,9 @@ export default function LogDayScreen() {
         {/* Weight */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionIcon}>⚖️</Text>
+            <View style={[styles.sectionIconBg, { backgroundColor: '#DBEAFE' }]}>
+              <Ionicons name="scale" size={18} color="#3B82F6" />
+            </View>
             <Text style={styles.sectionTitle}>Weight</Text>
           </View>
           <View style={styles.weightInputRow}>
@@ -164,19 +172,26 @@ export default function LogDayScreen() {
         {/* Water */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionIcon}>💧</Text>
+            <View style={[styles.sectionIconBg, { backgroundColor: '#E0F2FE' }]}>
+              <Ionicons name="color-filter" size={18} color="#0EA5E9" />
+            </View>
             <Text style={styles.sectionTitle}>Water</Text>
           </View>
+          <View style={styles.waterHeader}>
+            <Text style={styles.waterTotal}>{water} ml</Text>
+            <TouchableOpacity onPress={() => setWater(0)}>
+              <Text style={styles.waterReset}>Reset</Text>
+            </TouchableOpacity>
+          </View>
           <View style={styles.waterRow}>
-            {[250, 500, 750, 1000].map((amount) => (
+            {[250, 500].map((amount) => (
               <TouchableOpacity
                 key={amount}
-                style={[styles.waterBtn, water === amount && styles.waterBtnActive]}
-                onPress={() => setWater(amount)}
+                style={styles.waterAddBtn}
+                onPress={() => setWater(prev => prev + amount)}
               >
-                <Text style={[styles.waterBtnText, water === amount && styles.waterBtnTextActive]}>
-                  {amount}ml
-                </Text>
+                <Ionicons name="add" size={20} color={Colors.primary} />
+                <Text style={styles.waterAddText}>{amount}ml</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -215,7 +230,8 @@ const styles = StyleSheet.create({
     padding: Spacing.base,
     marginBottom: Spacing.md,
   },
-  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: 4 },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: 8 },
+  sectionIconBg: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   sectionIcon: { fontSize: 20 },
   sectionTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
   sectionSubtitle: { fontSize: 13, color: Colors.textSecondary, marginBottom: Spacing.md },
@@ -246,12 +262,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   chipSelected: {
-    backgroundColor: Colors.primaryBg,
+    backgroundColor: Colors.primary,
     borderColor: Colors.primary,
   },
   chipEmoji: { fontSize: 16 },
   chipLabel: { fontSize: 13, color: Colors.textPrimary, fontWeight: '500' },
-  chipLabelSelected: { color: Colors.primary, fontWeight: '600' },
+  chipLabelSelected: { color: Colors.white, fontWeight: '700' },
   
   // Weight & Water
   weightInputRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
@@ -260,13 +276,14 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg, fontSize: 18, fontWeight: '600', color: Colors.textPrimary 
   },
   weightUnit: { fontSize: 16, color: Colors.textSecondary, fontWeight: '600' },
-  waterRow: { flexDirection: 'row', gap: Spacing.sm },
-  waterBtn: { 
-    flex: 1, backgroundColor: Colors.white, borderRadius: BorderRadius.lg, 
-    padding: Spacing.sm, alignItems: 'center', justifyContent: 'center', gap: 4,
-    borderWidth: 1.5, borderColor: Colors.border
+  waterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
+  waterTotal: { fontSize: 24, fontWeight: '800', color: Colors.primary },
+  waterReset: { fontSize: 13, color: Colors.textMuted, fontWeight: '600' },
+  waterRow: { flexDirection: 'row', gap: Spacing.md },
+  waterAddBtn: { 
+    flex: 1, flexDirection: 'row', backgroundColor: Colors.white, borderRadius: BorderRadius.lg, 
+    padding: Spacing.md, alignItems: 'center', justifyContent: 'center', gap: 4,
+    borderWidth: 1.5, borderColor: Colors.primary + '30'
   },
-  waterBtnActive: { backgroundColor: Colors.blue, borderColor: Colors.blue },
-  waterBtnText: { fontSize: 12, fontWeight: '600', color: Colors.textSecondary },
-  waterBtnTextActive: { color: Colors.white },
+  waterAddText: { fontSize: 14, fontWeight: '700', color: Colors.primary },
 });

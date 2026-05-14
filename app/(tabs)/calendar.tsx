@@ -87,7 +87,7 @@ export default function CalendarScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Calendar</Text>
-        <TouchableOpacity onPress={() => router.push('/generic-setting?title=Calendar%20Options')}>
+        <TouchableOpacity onPress={() => router.push('/calendar-settings')}>
           <Ionicons name="options-outline" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
       </View>

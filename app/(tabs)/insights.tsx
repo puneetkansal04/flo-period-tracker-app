@@ -49,11 +49,11 @@ export default function InsightsScreen() {
   const cyclePhasePercent = (currentDay / cycleLength) * 100;
 
   // Mock cycle history data if not enough history exists
-  const cycleData = periodHistory && periodHistory.length > 2 
+  const cycleData = periodHistory && periodHistory.length > 0
     ? periodHistory.map(h => moment(h.end).diff(moment(h.start), 'days'))
     : [28, 29, 27, 30, 28, cycleLength];
   
-  const cycleLabels = periodHistory && periodHistory.length > 2
+  const cycleLabels = periodHistory && periodHistory.length > 0
     ? periodHistory.map(h => moment(h.start).format('MMM'))
     : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
 
@@ -73,6 +73,12 @@ export default function InsightsScreen() {
     useShadowColorFromDataset: false, // optional
     propsForLabels: {
       fontSize: 10,
+      fontWeight: '600',
+    },
+    propsForDots: {
+      r: '5',
+      strokeWidth: '2',
+      stroke: Colors.white,
     }
   };
 
@@ -81,7 +87,7 @@ export default function InsightsScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Insights</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/search')}>
           <Ionicons name="search-outline" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
       </View>

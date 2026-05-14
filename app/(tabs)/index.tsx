@@ -214,23 +214,23 @@ export default function TodayScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
       {/* Top Bar */}
-      <View style={styles.topBar}>
+      <View style={styles.header}>
         <View>
-          <Text style={styles.dateText}>{moment().format('MMMM D')}</Text>
-          <Text style={styles.cycleDay}>Cycle day {currentDay}</Text>
+          <Text style={styles.headerDate}>{moment().format('MMMM D')}</Text>
+          <Text style={styles.headerCycleDay}>Cycle day {currentDay}</Text>
         </View>
-        <View style={styles.topRight}>
+        <View style={styles.headerRight}>
           {!isPremium && (
-            <TouchableOpacity style={styles.premiumHeaderBtn} onPress={() => router.push('/paywall')}>
-              <Ionicons name="ribbon" size={22} color={Colors.orange} />
+            <TouchableOpacity onPress={() => setPaywallVisible(true)} style={styles.headerIcon}>
+              <Ionicons name="ribbon-outline" size={24} color={Colors.primary} />
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/reminders')}>
+          <TouchableOpacity onPress={() => setPaywallVisible(true)} style={styles.headerIcon}>
             <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.avatarBtn} onPress={() => router.push('/settings')}>
+          <TouchableOpacity onPress={() => router.push('/settings')} style={styles.profileBtn}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>A</Text>
+              <Text style={styles.avatarText}>{name?.charAt(0) || 'U'}</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -240,76 +240,59 @@ export default function TodayScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
       >
-        {/* Main Circle */}
-        <View style={styles.circleSection}>
-          <View style={styles.circleContainer}>
-            {/* Outer glow ring */}
-            <View style={[styles.glowRing, { borderColor: circleColor + '25' }]} />
-            <PulsingCircle color={circleColor} progress={progressFraction} />
-            
-            {/* Content overlay */}
-            <View style={styles.circleOverlay}>
-              <Text style={styles.circleDayNumber}>{currentDay}</Text>
-              <Text style={styles.circleDayText}>Cycle Day</Text>
-              <Text style={[styles.statusLabel, { color: circleColor }]}>{statusLabel}</Text>
-              <View style={[styles.phaseBadge, { backgroundColor: circleColor + '20' }]}>
-                <View style={[styles.phaseDot, { backgroundColor: circleColor }]} />
-                <Text style={[styles.phaseText, { color: circleColor }]}>
-                  {phase === 'period' ? 'Menstruation' :
-                   phase === 'fertile' ? 'Fertile window' :
-                   phase === 'ovulation' ? 'Ovulation' :
-                   phase === 'follicular' ? 'Follicular phase' : 'Luteal phase'}
-                </Text>
+        <View style={styles.mainCircleContainer}>
+          <View style={[styles.circleOuter, { borderColor: calcs.circleColor + '40', borderStyle: 'dashed' }]}>
+            <View style={styles.circleInner}>
+              <View style={styles.circleCore}>
+                <Text style={[styles.circleTitle, { color: calcs.circleColor }]}>{calcs.title}</Text>
+                <View style={[styles.phaseBadge, { backgroundColor: calcs.circleColor + '20' }]}>
+                  <View style={[styles.phaseDot, { backgroundColor: calcs.circleColor }]} />
+                  <Text style={[styles.phaseBadgeText, { color: calcs.circleColor }]}>{calcs.subtitle}</Text>
+                </View>
               </View>
-              <Text style={styles.healthTipText}>{calcs.healthTip}</Text>
             </View>
           </View>
-
-          {/* Log today button */}
-          <TouchableOpacity
-            style={[styles.logTodayBtn, { backgroundColor: circleColor }]}
-            onPress={() => {
-              console.log('Tapped Log Today');
-              router.push('/log-day');
-            }}
-            activeOpacity={0.85}
+          
+          <TouchableOpacity 
+            style={styles.logTodayBtn}
+            onPress={() => router.push(`/log-day?date=${moment().format('YYYY-MM-DD')}`)}
           >
-            <Ionicons name={todayLog ? 'checkmark' : 'add'} size={18} color={Colors.white} />
-            <Text style={styles.logTodayText}>
-              {todayLog ? "Update today's log" : 'Log today'}
-            </Text>
+            <Ionicons name="add" size={24} color={Colors.white} />
+            <Text style={styles.logTodayBtnText}>Log today</Text>
           </TouchableOpacity>
         </View>
 
         {/* Prediction Cards */}
-        <View style={styles.predictionRow}>
-          <View style={[styles.predictionCard, { backgroundColor: Colors.primary + '12' }]}>
+        <View style={styles.cardsRow}>
+          <View style={[styles.predCard, { backgroundColor: Colors.primaryBg }]}>
             <Ionicons name="water" size={20} color={Colors.primary} />
             <Text style={styles.predCardLabel}>Next period</Text>
-            <Text style={[styles.predCardValue, { color: Colors.primary }]}>
-              {daysUntilPeriod === 0 ? 'Today' : `in ${daysUntilPeriod}d`}
-            </Text>
-            <Text style={styles.predCardDate}>{nextPeriodDate.format('MMM D')}</Text>
+            <Text style={[styles.predCardValue, { color: Colors.primary }]}>in {calcs.daysUntilPeriod}d</Text>
+            <Text style={styles.predCardDate}>{moment().add(calcs.daysUntilPeriod, 'days').format('MMM D')}</Text>
           </View>
-
-          <View style={[styles.predictionCard, { backgroundColor: Colors.orange + '12' }]}>
-            <Ionicons name="sunny-outline" size={20} color={Colors.orange} />
+          <View style={[styles.predCard, { backgroundColor: '#FFF9E6' }]}>
+            <Ionicons name="sunny" size={20} color={Colors.orange} />
             <Text style={styles.predCardLabel}>Ovulation</Text>
-            <Text style={[styles.predCardValue, { color: Colors.orange }]}>
-              {daysUntilOvulation === 0 ? 'Today' :
-               daysUntilOvulation < 0 ? 'Passed' : `in ${daysUntilOvulation}d`}
-            </Text>
-            <Text style={styles.predCardDate}>{ovulationDate.format('MMM D')}</Text>
+            <Text style={[styles.predCardValue, { color: Colors.orange }]}>in {calcs.daysUntilOvulation}d</Text>
+            <Text style={styles.predCardDate}>{moment().add(calcs.daysUntilOvulation, 'days').format('MMM D')}</Text>
           </View>
-
-          <View style={[styles.predictionCard, { backgroundColor: Colors.green + '12' }]}>
+          <View style={[styles.predCard, { backgroundColor: '#E6F7F9' }]}>
             <Ionicons name="heart" size={20} color={Colors.green} />
             <Text style={styles.predCardLabel}>Cycle day</Text>
-            <Text style={[styles.predCardValue, { color: Colors.green }]}>
-              {currentDay}
-            </Text>
+            <Text style={[styles.predCardValue, { color: Colors.green }]}>{currentDay}</Text>
             <Text style={styles.predCardDate}>of {cycleLength}</Text>
           </View>
+        </View>
+
+        {/* Health Insight Card */}
+        <View style={styles.insightCard}>
+          <View style={styles.insightHeader}>
+            <View style={[styles.insightIcon, { backgroundColor: calcs.circleColor + '20' }]}>
+              <Ionicons name="bulb-outline" size={20} color={calcs.circleColor} />
+            </View>
+            <Text style={styles.insightTitle}>Health Insight</Text>
+          </View>
+          <Text style={styles.insightText}>{calcs.healthTip}</Text>
         </View>
 
         {/* Today's Log Summary */}
@@ -367,17 +350,6 @@ export default function TodayScreen() {
           ))}
         </View>
 
-        {/* Fertility Banner */}
-        <View style={styles.section}>
-          <TouchableOpacity style={styles.fertilityBanner} activeOpacity={0.85} onPress={() => router.push('/paywall')}>
-            <View>
-              <Text style={styles.fertilityTitle}>Supercharge your health</Text>
-              <Text style={styles.fertilitySubtitle}>with Premium insights →</Text>
-            </View>
-            <Text style={styles.fertilityEmoji}>✨</Text>
-          </TouchableOpacity>
-        </View>
-
         <View style={{ height: 80 }} />
       </ScrollView>
       <RatingPrompt />
@@ -395,7 +367,7 @@ export default function TodayScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.offWhite },
-  topBar: {
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -405,16 +377,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  dateText: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
-  cycleDay: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
-  topRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  premiumHeaderBtn: {
-    padding: 6,
-    backgroundColor: Colors.orange + '15',
-    borderRadius: 10,
-  },
-  notifBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  avatarBtn: {},
+  headerDate: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
+  headerCycleDay: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerIcon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   avatar: {
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center',
@@ -422,130 +388,47 @@ const styles = StyleSheet.create({
   avatarText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
   scroll: { paddingBottom: Spacing['5xl'] },
 
-  // Circle
-  circleSection: {
-    backgroundColor: Colors.white,
-    paddingVertical: Spacing['2xl'],
-    alignItems: 'center',
-    marginBottom: Spacing.md,
-  },
-  circleContainer: {
-    width: CIRCLE_SIZE + 40,
-    height: CIRCLE_SIZE + 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.lg,
-  },
-  glowRing: {
-    position: 'absolute',
-    width: CIRCLE_SIZE + 40,
-    height: CIRCLE_SIZE + 40,
-    borderRadius: (CIRCLE_SIZE + 40) / 2,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-  },
-  outerRing: {
-    width: CIRCLE_SIZE + 16,
-    height: CIRCLE_SIZE + 16,
-    borderRadius: (CIRCLE_SIZE + 16) / 2,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  circleOverlay: {
-    position: 'absolute',
-    width: CIRCLE_SIZE,
-    height: CIRCLE_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mainCircle: {
-    width: CIRCLE_SIZE,
-    height: CIRCLE_SIZE,
-    borderRadius: CIRCLE_SIZE / 2,
-    backgroundColor: Colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 24,
-    elevation: 12,
-  },
-  circleWrap: {},
-  circleOuter: { borderWidth: 2 },
-  circleInner: { borderWidth: 1 },
-  circleCore: {},
-  statusLabel: {
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: Spacing.sm,
-  },
-  circleDayNumber: {
-    fontSize: 64,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-    marginBottom: 0,
-  },
-  circleDayText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    fontWeight: '600',
-    marginBottom: Spacing.sm,
-    textTransform: 'uppercase',
-  },
-  healthTipText: {
-    fontSize: 13,
-    color: Colors.textMuted,
-    marginTop: Spacing.md,
-    fontWeight: '500',
-    textAlign: 'center',
-    paddingHorizontal: Spacing.xl,
-  },
-  phaseBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.full,
-    gap: 6,
+  mainCircleContainer: { alignItems: 'center', paddingVertical: 40, position: 'relative' },
+  circleOuter: { width: 280, height: 280, borderRadius: 140, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  circleInner: { width: 260, height: 260, borderRadius: 130, alignItems: 'center', justifyContent: 'center' },
+  circleCore: { alignItems: 'center', justifyContent: 'center' },
+  circleTitle: { fontSize: 32, fontWeight: '800', marginBottom: 12 },
+  phaseBadge: { 
+    flexDirection: 'row', alignItems: 'center', gap: 6, 
+    paddingHorizontal: 16, paddingVertical: 8, borderRadius: BorderRadius.full 
   },
   phaseDot: { width: 8, height: 8, borderRadius: 4 },
-  phaseText: { fontSize: 13, fontWeight: '600' },
-  logTodayBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.full,
-    gap: Spacing.sm,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+  phaseBadgeText: { fontSize: 14, fontWeight: '700' },
+  logTodayBtn: { 
+    position: 'absolute', bottom: 10,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: Colors.primary, paddingHorizontal: 24, paddingVertical: 14,
+    borderRadius: BorderRadius.full, ...Shadows.button,
   },
-  logTodayText: { color: Colors.white, fontSize: 15, fontWeight: '600' },
+  logTodayBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
 
-  // Prediction cards
-  predictionRow: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.base,
-    gap: Spacing.sm,
-    marginBottom: Spacing.md,
+  insightCard: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    marginHorizontal: Spacing.base,
+    marginTop: Spacing.lg,
+    ...Shadows.card,
   },
-  predictionCard: {
-    flex: 1,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    alignItems: 'center',
-    gap: 4,
-  },
-  predCardLabel: { fontSize: 11, color: Colors.textSecondary, fontWeight: '500', marginTop: 2 },
-  predCardValue: { fontSize: 18, fontWeight: '700' },
-  predCardDate: { fontSize: 11, color: Colors.textMuted },
+  insightHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
+  insightIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  insightTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
+  insightText: { fontSize: 14, color: Colors.textSecondary, lineHeight: 20 },
 
-  // Sections
+  cardsRow: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.xl, paddingHorizontal: Spacing.base },
+  predCard: { 
+    flex: 1, padding: Spacing.md, borderRadius: BorderRadius.lg, 
+    alignItems: 'center', gap: 4,
+  },
+  predCardLabel: { fontSize: 11, color: Colors.textSecondary, fontWeight: '600' },
+  predCardValue: { fontSize: 16, fontWeight: '800' },
+  predCardDate: { fontSize: 10, color: Colors.textMuted },
+
   section: { paddingHorizontal: Spacing.base, marginBottom: Spacing.md },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginBottom: Spacing.md },
