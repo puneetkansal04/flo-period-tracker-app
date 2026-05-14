@@ -8,6 +8,7 @@ import { store, persistor } from '@/store';
 import { RootState } from '@/store';
 import { useEffect } from 'react';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { registerForPushNotificationsAsync } from '@/utils/notifications';
 
 function NavigationGuard() {
   const segments = useSegments();
@@ -35,10 +36,23 @@ export const unstable_settings = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
+  useEffect(() => {
+    // registerForPushNotificationsAsync();
+  }, []);
+
+  const customTheme = {
+    ...(colorScheme === 'dark' ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(colorScheme === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
+      primary: '#FF5A76', // Opaque Flo pink
+      background: '#FFFFFF', // Opaque white
+    }
+  };
+
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <ThemeProvider value={customTheme}>
           <NavigationGuard />
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -53,7 +67,7 @@ export default function RootLayout() {
             <Stack.Screen name="post-detail" options={{ presentation: 'modal', headerShown: false }} />
             <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
           </Stack>
-          <StatusBar style="auto" />
+          <StatusBar style="auto" backgroundColor="#FFFFFF" />
         </ThemeProvider>
       </PersistGate>
     </Provider>

@@ -91,34 +91,48 @@ function useCycleCalculations() {
 }
 
 function PulsingCircle({ color, progress }: { color: string; progress: number }) {
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const progressAnim = useRef(new Animated.Value(0)).current;
+  const pulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Pulse animation
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.04, duration: 1500, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
+        Animated.timing(pulse, {
+          toValue: 1.1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
       ])
     ).start();
-
-    // Progress animation
-    Animated.timing(progressAnim, {
-      toValue: progress,
-      duration: 1000,
-      useNativeDriver: false,
-    }).start();
-  }, [progress]);
+  }, []);
 
   return (
-    <Animated.View style={[styles.circleWrap, { transform: [{ scale: pulseAnim }] }]}>
-      <View style={[styles.circleOuter, { borderColor: color + '30' }]}>
-        <View style={[styles.circleInner, { borderColor: color + '15' }]}>
-          <View style={[styles.circleCore, { shadowColor: color }]} />
-        </View>
-      </View>
-    </Animated.View>
+    <View style={styles.pulseContainer}>
+      <Animated.View 
+        style={[
+          styles.pulseCircle, 
+          { 
+            backgroundColor: color,
+            opacity: 0.1,
+            transform: [{ scale: pulse }]
+          }
+        ]} 
+      />
+      <Animated.View 
+        style={[
+          styles.pulseCircle, 
+          { 
+            backgroundColor: color,
+            opacity: 0.05,
+            transform: [{ scale: Animated.multiply(pulse, 1.2) }]
+          }
+        ]} 
+      />
+    </View>
   );
 }
 
@@ -198,20 +212,19 @@ export default function TodayScreen() {
           <View style={styles.circleContainer}>
             {/* Outer glow ring */}
             <View style={[styles.glowRing, { borderColor: circleColor + '25' }]} />
-            <View style={[styles.outerRing, { borderColor: circleColor + '50' }]}>
-              {/* Progress arc overlay */}
-              <View style={[styles.mainCircle, { shadowColor: circleColor }]}>
-                {/* Center content */}
-                <Text style={[styles.statusLabel, { color: circleColor }]}>{statusLabel}</Text>
-                <View style={[styles.phaseBadge, { backgroundColor: circleColor + '20' }]}>
-                  <View style={[styles.phaseDot, { backgroundColor: circleColor }]} />
-                  <Text style={[styles.phaseText, { color: circleColor }]}>
-                    {phase === 'period' ? 'Menstruation' :
-                     phase === 'fertile' ? 'Fertile window' :
-                     phase === 'ovulation' ? 'Ovulation' :
-                     phase === 'follicular' ? 'Follicular phase' : 'Luteal phase'}
-                  </Text>
-                </View>
+            <PulsingCircle color={circleColor} progress={progressFraction} />
+            
+            {/* Content overlay */}
+            <View style={styles.circleOverlay}>
+              <Text style={[styles.statusLabel, { color: circleColor }]}>{statusLabel}</Text>
+              <View style={[styles.phaseBadge, { backgroundColor: circleColor + '20' }]}>
+                <View style={[styles.phaseDot, { backgroundColor: circleColor }]} />
+                <Text style={[styles.phaseText, { color: circleColor }]}>
+                  {phase === 'period' ? 'Menstruation' :
+                   phase === 'fertile' ? 'Fertile window' :
+                   phase === 'ovulation' ? 'Ovulation' :
+                   phase === 'follicular' ? 'Follicular phase' : 'Luteal phase'}
+                </Text>
               </View>
             </View>
           </View>
@@ -219,7 +232,10 @@ export default function TodayScreen() {
           {/* Log today button */}
           <TouchableOpacity
             style={[styles.logTodayBtn, { backgroundColor: circleColor }]}
-            onPress={() => router.push('/log-day')}
+            onPress={() => {
+              console.log('Tapped Log Today');
+              router.push('/log-day');
+            }}
             activeOpacity={0.85}
           >
             <Ionicons name={todayLog ? 'checkmark' : 'add'} size={18} color={Colors.white} />
@@ -386,6 +402,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  circleOverlay: {
+    position: 'absolute',
+    width: CIRCLE_SIZE,
+    height: CIRCLE_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   mainCircle: {
     width: CIRCLE_SIZE,
     height: CIRCLE_SIZE,
@@ -500,4 +523,18 @@ const styles = StyleSheet.create({
   fertilityTitle: { color: Colors.white, fontSize: 16, fontWeight: '700' },
   fertilitySubtitle: { color: Colors.white + 'CC', fontSize: 13, marginTop: 2 },
   fertilityEmoji: { fontSize: 32 },
+  pulseContainer: {
+    position: 'absolute',
+    width: CIRCLE_SIZE + 80,
+    height: CIRCLE_SIZE + 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: -1,
+  },
+  pulseCircle: {
+    position: 'absolute',
+    width: CIRCLE_SIZE,
+    height: CIRCLE_SIZE,
+    borderRadius: CIRCLE_SIZE / 2,
+  },
 });

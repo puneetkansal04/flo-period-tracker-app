@@ -33,10 +33,10 @@ export default function PaywallScreen() {
         <ScrollView contentContainerStyle={styles.scroll}>
           <View style={styles.heroSection}>
             <View style={styles.logoBadge}>
-              <Text style={styles.logoText}>Flo Premium</Text>
+              <Text style={styles.logoText}>Serene Premium</Text>
             </View>
             <Text style={styles.title}>Unlock your body's full potential</Text>
-            <Text style={styles.subtitle}>Get personalized insights, advanced predictions, and more with Flo Premium.</Text>
+            <Text style={styles.subtitle}>Get personalized insights, advanced predictions, and more with Serene Premium.</Text>
           </View>
 
           <View style={styles.featuresList}>

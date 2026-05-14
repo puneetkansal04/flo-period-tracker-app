@@ -57,7 +57,7 @@ export default function ArticleScreen() {
         </Text>
 
         <TouchableOpacity style={styles.premiumBanner} onPress={() => router.push('/paywall')}>
-          <Text style={styles.premiumBannerText}>Unlock full medical reports with Flo Premium</Text>
+          <Text style={styles.premiumBannerText}>Unlock full medical reports with Serene Premium</Text>
           <Ionicons name="lock-closed" size={16} color={Colors.white} />
         </TouchableOpacity>
       </ScrollView>

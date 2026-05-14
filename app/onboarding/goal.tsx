@@ -34,8 +34,10 @@ export default function GoalScreen() {
   const [selected, setSelected] = useState<GoalType>(null);
 
   const handleNext = () => {
+    console.log('Goal selected:', selected);
     if (selected) {
-      dispatch(setGoal(selected));
+      console.log('Pushing route directly...');
+      // dispatch(setGoal(selected));
       router.push('/onboarding/birth-year');
     }
   };
@@ -52,28 +54,31 @@ export default function GoalScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.container} bounces={false}>
-        <Text style={styles.title}>What would you like to use Flo for?</Text>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.container}>
+        <Text style={styles.title}>What would you like to use Serene for?</Text>
         <Text style={styles.subtitle}>You can always change this later</Text>
 
-        <View style={styles.optionsList}>
+        <View style={styles.optionsContainer}>
           {GOALS.map((goal) => {
             const isSelected = selected === goal.key;
             return (
               <TouchableOpacity
                 key={goal.key}
                 style={[styles.option, isSelected && styles.optionSelected]}
-                onPress={() => setSelected(goal.key)}
+                onPress={() => {
+                console.log('Tapped goal:', goal.key);
+                setSelected(goal.key);
+              }}
                 activeOpacity={0.8}
               >
                 <Text style={styles.optionIcon}>{goal.icon}</Text>
-                <View style={styles.optionTextWrap}>
+                <View style={styles.optionTextContainer}>
                   <Text style={[styles.optionTitle, isSelected && styles.optionTitleSelected]}>
                     {goal.title}
                   </Text>
                   <Text style={styles.optionDesc}>{goal.description}</Text>
                 </View>
-                <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
+                <View style={[styles.radio, isSelected && styles.radioSelected]}>
                   {isSelected && <View style={styles.radioInner} />}
                 </View>
               </TouchableOpacity>
@@ -85,7 +90,10 @@ export default function GoalScreen() {
       <View style={styles.footer}>
         <TouchableOpacity
           style={[styles.nextBtn, !selected && styles.nextBtnDisabled]}
-          onPress={handleNext}
+          onPress={() => {
+            console.log('Next button pressed');
+            handleNext();
+          }}
           activeOpacity={selected ? 0.85 : 1}
         >
           <Text style={styles.nextBtnText}>Next</Text>
@@ -141,7 +149,7 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginBottom: Spacing['2xl'],
   },
-  optionsList: {
+  optionsContainer: {
     gap: Spacing.md,
   },
   option: {
@@ -163,7 +171,7 @@ const styles = StyleSheet.create({
     width: 40,
     textAlign: 'center',
   },
-  optionTextWrap: {
+  optionTextContainer: {
     flex: 1,
   },
   optionTitle: {
@@ -179,7 +187,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textSecondary,
   },
-  radioOuter: {
+  radio: {
     width: 22,
     height: 22,
     borderRadius: 11,
@@ -188,7 +196,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  radioOuterSelected: {
+  radioSelected: {
     borderColor: Colors.primary,
   },
   radioInner: {

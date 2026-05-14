@@ -18,16 +18,17 @@ export default function InsightsScreen() {
   );
 
   const today = moment().startOf('day');
-  const lastPeriod = moment(lastPeriodDate).startOf('day');
-  const daysPassed = today.diff(lastPeriod, 'days');
-  const currentDay = (daysPassed % cycleLength) + 1;
+  const lastPeriod = moment(lastPeriodDate || new Date()).startOf('day');
+  const daysPassed = today.diff(lastPeriod, 'days') || 0;
+  const currentDay = ((daysPassed % (cycleLength || 28)) + 1) || 1;
 
   // Symptom frequency from all logs
-  const allLogs = Object.values(dailyLogs);
+  const allLogs = Object.values(dailyLogs || {});
   const moodCounts: Record<string, number> = {};
   const symptomCounts: Record<string, number> = {};
 
   allLogs.forEach(log => {
+    if (!log) return;
     (log.moods || []).forEach(m => { moodCounts[m] = (moodCounts[m] || 0) + 1; });
     (log.symptoms || []).forEach(s => { symptomCounts[s] = (symptomCounts[s] || 0) + 1; });
   });

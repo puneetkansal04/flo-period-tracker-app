@@ -209,7 +209,7 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        <Text style={styles.version}>Flo Clone v1.0.0 · Made with ❤️</Text>
+        <Text style={styles.version}>Serene Cycle v1.0.0 · Made with ❤️</Text>
         <View style={{ height: 30 }} />
       </ScrollView>
     </SafeAreaView>

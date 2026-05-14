@@ -38,14 +38,14 @@ export default function PrivacyScreen() {
         {/* Flo Logo */}
         <View style={styles.logoContainer}>
           <View style={styles.logoCircle}>
-            <Text style={styles.logoText}>flo</Text>
+            <Text style={styles.logoText}>serene</Text>
           </View>
         </View>
 
         {/* Title */}
         <Text style={styles.title}>Privacy first</Text>
         <Text style={styles.subtitle}>
-          Flo is a safe space for you. Please read and accept these terms to continue.
+          Serene is a safe space for you. Please read and accept these terms to continue.
         </Text>
 
         {/* Consent items */}
