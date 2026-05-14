@@ -3,6 +3,8 @@ import { StyleSheet, ScrollView, TouchableOpacity, useColorScheme } from 'react-
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useRouter } from 'expo-router';
+import { useDispatch } from 'react-redux';
+import { setGoal } from '@/store/slices/periodSlice';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function GoalScreen() {
@@ -24,8 +26,10 @@ export default function GoalScreen() {
     { id: 'pregnancy', title: 'Track pregnancy', icon: 'analytics-outline' }, // Or something related to pregnancy
   ];
 
+  const dispatch = useDispatch();
   const handleNext = () => {
     if (selectedGoal) {
+      dispatch(setGoal(selectedGoal));
       router.push('/onboarding/cycle-length');
     }
   };

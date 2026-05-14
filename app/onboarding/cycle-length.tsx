@@ -3,6 +3,8 @@ import { StyleSheet, ScrollView, TouchableOpacity, useColorScheme, FlatList } fr
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useRouter } from 'expo-router';
+import { useDispatch } from 'react-redux';
+import { setCycleLength } from '@/store/slices/periodSlice';
 
 export default function CycleLengthScreen() {
   const router = useRouter();
@@ -20,7 +22,9 @@ export default function CycleLengthScreen() {
   // Generate cycle lengths from 20 to 45
   const lengths = Array.from({ length: 45 - 20 + 1 }, (_, i) => 20 + i);
 
+  const dispatch = useDispatch();
   const handleNext = () => {
+    dispatch(setCycleLength(selectedLength));
     router.push('/onboarding/period-length');
   };
 

@@ -3,6 +3,8 @@ import { StyleSheet, ScrollView, TouchableOpacity, useColorScheme, FlatList } fr
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useRouter } from 'expo-router';
+import { useDispatch } from 'react-redux';
+import { setPeriodLength } from '@/store/slices/periodSlice';
 
 export default function PeriodLengthScreen() {
   const router = useRouter();
@@ -20,8 +22,9 @@ export default function PeriodLengthScreen() {
   // Generate period lengths from 1 to 10
   const lengths = Array.from({ length: 10 }, (_, i) => i + 1);
 
+  const dispatch = useDispatch();
   const handleNext = () => {
-    // Here we should save all data and navigate to the main app
+    dispatch(setPeriodLength(selectedLength));
     router.push('/(tabs)');
   };
 

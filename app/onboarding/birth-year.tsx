@@ -3,6 +3,8 @@ import { StyleSheet, ScrollView, TouchableOpacity, useColorScheme, FlatList } fr
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useRouter } from 'expo-router';
+import { useDispatch } from 'react-redux';
+import { setBirthYear } from '@/store/slices/periodSlice';
 
 export default function BirthYearScreen() {
   const router = useRouter();
@@ -21,9 +23,10 @@ export default function BirthYearScreen() {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 1950 + 1 }, (_, i) => currentYear - i);
 
+  const dispatch = useDispatch();
   const handleNext = () => {
     if (selectedYear) {
-      // Save to state or context later
+      dispatch(setBirthYear(selectedYear));
       router.push('/onboarding/goal');
     }
   };

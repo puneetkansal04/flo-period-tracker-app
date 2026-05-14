@@ -1,11 +1,7 @@
-import { useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-export interface PeriodData {
-  lastPeriodDate: Date;
-  cycleLength: number;
-  periodLength: number;
-}
+import { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '@/store';
+import { updatePeriodData as updatePeriodDataAction } from '@/store/slices/periodSlice';
 
 export interface PeriodCalculations {
   currentDay: number;
@@ -17,14 +13,9 @@ export interface PeriodCalculations {
   chancesOfPregnancy: string;
 }
 
-const STORAGE_KEY = '@period_tracker_data';
-
-export function usePeriodTracker(initialData?: Partial<PeriodData>) {
-  const [data, setData] = useState<PeriodData>({
-    lastPeriodDate: initialData?.lastPeriodDate || new Date(),
-    cycleLength: initialData?.cycleLength || 28,
-    periodLength: initialData?.periodLength || 5,
-  });
+export function usePeriodTracker() {
+  const dispatch = useDispatch();
+  const data = useSelector((state: RootState) => state.period);
 
   const [calculations, setCalculations] = useState<PeriodCalculations>({
     currentDay: 1,
@@ -36,27 +27,6 @@ export function usePeriodTracker(initialData?: Partial<PeriodData>) {
     chancesOfPregnancy: 'Low',
   });
 
-  // Load data on mount
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const storedData = await AsyncStorage.getItem(STORAGE_KEY);
-        if (storedData) {
-          const parsed = JSON.parse(storedData);
-          setData({
-            lastPeriodDate: new Date(parsed.lastPeriodDate),
-            cycleLength: parsed.cycleLength,
-            periodLength: parsed.periodLength,
-          });
-        }
-      } catch (e) {
-        console.error('Failed to load period data', e);
-      }
-    };
-    loadData();
-  }, []);
-
-  // Recalculate whenever data changes
   useEffect(() => {
     calculateCycle();
   }, [data]);
@@ -114,14 +84,8 @@ export function usePeriodTracker(initialData?: Partial<PeriodData>) {
     });
   };
 
-  const updatePeriodData = async (newData: Partial<PeriodData>) => {
-    const updated = { ...data, ...newData };
-    setData(updated);
-    try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    } catch (e) {
-      console.error('Failed to save period data', e);
-    }
+  const updatePeriodData = (newData: Partial<typeof data>) => {
+    dispatch(updatePeriodDataAction(newData));
   };
 
   return {
