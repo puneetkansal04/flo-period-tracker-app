@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface PeriodData {
   lastPeriodDate: Date;
@@ -15,6 +16,8 @@ export interface PeriodCalculations {
   statusText: string;
   chancesOfPregnancy: string;
 }
+
+const STORAGE_KEY = '@period_tracker_data';
 
 export function usePeriodTracker(initialData?: Partial<PeriodData>) {
   const [data, setData] = useState<PeriodData>({
@@ -33,6 +36,27 @@ export function usePeriodTracker(initialData?: Partial<PeriodData>) {
     chancesOfPregnancy: 'Low',
   });
 
+  // Load data on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const storedData = await AsyncStorage.getItem(STORAGE_KEY);
+        if (storedData) {
+          const parsed = JSON.parse(storedData);
+          setData({
+            lastPeriodDate: new Date(parsed.lastPeriodDate),
+            cycleLength: parsed.cycleLength,
+            periodLength: parsed.periodLength,
+          });
+        }
+      } catch (e) {
+        console.error('Failed to load period data', e);
+      }
+    };
+    loadData();
+  }, []);
+
+  // Recalculate whenever data changes
   useEffect(() => {
     calculateCycle();
   }, [data]);
@@ -75,7 +99,7 @@ export function usePeriodTracker(initialData?: Partial<PeriodData>) {
     let chancesOfPregnancy = 'Low';
     if (today >= fertileWindowStart && today <= fertileWindowEnd) {
       chancesOfPregnancy = 'High';
-    } else if (today >= new Date(fertileWindowStart.getDate() - 2) && today <= fertileWindowEnd) {
+    } else if (today >= new Date(fertileWindowStart.getTime() - 2 * 24 * 60 * 60 * 1000) && today <= fertileWindowEnd) {
       chancesOfPregnancy = 'Medium';
     }
 
@@ -90,8 +114,14 @@ export function usePeriodTracker(initialData?: Partial<PeriodData>) {
     });
   };
 
-  const updatePeriodData = (newData: Partial<PeriodData>) => {
-    setData((prev) => ({ ...prev, ...newData }));
+  const updatePeriodData = async (newData: Partial<PeriodData>) => {
+    const updated = { ...data, ...newData };
+    setData(updated);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to save period data', e);
+    }
   };
 
   return {
