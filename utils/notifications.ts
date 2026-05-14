@@ -45,7 +45,10 @@ export async function scheduleCycleNotifications(daysUntilPeriod: number) {
         title: "Period starting soon 🌸",
         body: "Your period is predicted to start tomorrow. Get ready!",
       },
-      trigger: { seconds: 5 }, // Immediate for testing, or set a specific time
+      trigger: { 
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 5 
+      }, // Immediate for testing, or set a specific time
     });
   }
 }

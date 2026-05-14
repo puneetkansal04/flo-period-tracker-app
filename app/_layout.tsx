@@ -64,13 +64,14 @@ export default function RootLayout() {
             <Stack.Screen name="onboarding" options={{ headerShown: false }} />
             <Stack.Screen name="log-day" options={{ presentation: 'modal', headerShown: false }} />
             <Stack.Screen name="symptoms" options={{ presentation: 'modal', headerShown: false }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
             <Stack.Screen name="paywall" options={{ presentation: 'modal', headerShown: false }} />
             <Stack.Screen name="article" options={{ presentation: 'modal', headerShown: false }} />
             <Stack.Screen name="generic-setting" options={{ headerShown: false }} />
             <Stack.Screen name="reminders" options={{ headerShown: false }} />
             <Stack.Screen name="post-detail" options={{ presentation: 'modal', headerShown: false }} />
             <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
+            <Stack.Screen name="calendar-settings" options={{ headerShown: false }} />
           </Stack>
           <StatusBar style="auto" backgroundColor="#FFFFFF" />
         </ThemeProvider>

@@ -5,12 +5,18 @@ import { useRouter } from 'expo-router';
 import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
 import { Ionicons } from '@expo/vector-icons';
 
+import { updateCalendarSettings } from '@/store/slices/periodSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '@/store';
+
 export default function CalendarSettingsScreen() {
   const router = useRouter();
-  const [showOvulation, setShowOvulation] = useState(true);
-  const [showFertile, setShowFertile] = useState(true);
-  const [showPregnancyChance, setShowPregnancyChance] = useState(true);
-  const [firstDayMonday, setFirstDayMonday] = useState(false);
+  const dispatch = useDispatch();
+  const { calendarSettings } = useSelector((state: RootState) => state.period);
+
+  const toggleSetting = (key: keyof typeof calendarSettings) => {
+    dispatch(updateCalendarSettings({ [key]: !calendarSettings[key] }));
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -33,10 +39,10 @@ export default function CalendarSettingsScreen() {
                 <Text style={styles.rowSub}>Mark predicted ovulation day</Text>
               </View>
               <Switch 
-                value={showOvulation} 
-                onValueChange={setShowOvulation}
+                value={calendarSettings.showOvulation} 
+                onValueChange={() => toggleSetting('showOvulation')}
                 trackColor={{ false: Colors.lightGray, true: Colors.primary + '80' }}
-                thumbColor={showOvulation ? Colors.primary : Colors.borderDark}
+                thumbColor={calendarSettings.showOvulation ? Colors.primary : Colors.borderDark}
               />
             </View>
             <View style={styles.divider} />
@@ -46,10 +52,10 @@ export default function CalendarSettingsScreen() {
                 <Text style={styles.rowSub}>Highlight high-fertility days</Text>
               </View>
               <Switch 
-                value={showFertile} 
-                onValueChange={setShowFertile}
+                value={calendarSettings.showFertile} 
+                onValueChange={() => toggleSetting('showFertile')}
                 trackColor={{ false: Colors.lightGray, true: Colors.primary + '80' }}
-                thumbColor={showFertile ? Colors.primary : Colors.borderDark}
+                thumbColor={calendarSettings.showFertile ? Colors.primary : Colors.borderDark}
               />
             </View>
             <View style={styles.divider} />
@@ -59,10 +65,10 @@ export default function CalendarSettingsScreen() {
                 <Text style={styles.rowSub}>Show daily health tips</Text>
               </View>
               <Switch 
-                value={showPregnancyChance} 
-                onValueChange={setShowPregnancyChance}
+                value={calendarSettings.showPregnancyChance} 
+                onValueChange={() => toggleSetting('showPregnancyChance')}
                 trackColor={{ false: Colors.lightGray, true: Colors.primary + '80' }}
-                thumbColor={showPregnancyChance ? Colors.primary : Colors.borderDark}
+                thumbColor={calendarSettings.showPregnancyChance ? Colors.primary : Colors.borderDark}
               />
             </View>
           </View>
@@ -76,10 +82,10 @@ export default function CalendarSettingsScreen() {
                 <Text style={styles.rowLabel}>Week Starts on Monday</Text>
               </View>
               <Switch 
-                value={firstDayMonday} 
-                onValueChange={setFirstDayMonday}
+                value={calendarSettings.firstDayMonday} 
+                onValueChange={() => toggleSetting('firstDayMonday')}
                 trackColor={{ false: Colors.lightGray, true: Colors.primary + '80' }}
-                thumbColor={firstDayMonday ? Colors.primary : Colors.borderDark}
+                thumbColor={calendarSettings.firstDayMonday ? Colors.primary : Colors.borderDark}
               />
             </View>
           </View>

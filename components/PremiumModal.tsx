@@ -116,6 +116,12 @@ const styles = StyleSheet.create({
     marginBottom: Spacing['2xl'],
     gap: Spacing.md,
   },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    marginBottom: Spacing.md,
+  },
   featureIconContainer: { 
     width: 44, height: 44, borderRadius: 12, 
     backgroundColor: Colors.primary + '10', 

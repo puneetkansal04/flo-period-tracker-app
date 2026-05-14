@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar } from 'react-native';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
-import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
+import { Colors, BorderRadius, Spacing, Shadows } from '@/constants/FloColors';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import moment from 'moment';
@@ -17,14 +17,23 @@ type DayInfo = {
   isToday: boolean;
   hasLog: boolean;
 };
-
 function useCalendarDays(viewMonth: moment.Moment) {
-  const { lastPeriodDate, cycleLength, periodLength, dailyLogs } = useSelector(
+  const { lastPeriodDate, cycleLength, periodLength, dailyLogs, calendarSettings } = useSelector(
     (s: RootState) => s.period
   );
 
-  const start = viewMonth.clone().startOf('month').startOf('week');
-  const end = viewMonth.clone().endOf('month').endOf('week');
+  const start = viewMonth.clone().startOf('month');
+  // Adjust start to the previous Sunday or Monday
+  const startDay = start.day();
+  const targetStart = calendarSettings.firstDayMonday ? 1 : 0;
+  const daysToSubtract = (startDay - targetStart + 7) % 7;
+  start.subtract(daysToSubtract, 'days');
+
+  const end = viewMonth.clone().endOf('month');
+  const endDay = end.day();
+  const targetEnd = calendarSettings.firstDayMonday ? 0 : 6;
+  const daysToAdd = (targetEnd - endDay + 7) % 7;
+  end.add(daysToAdd, 'days');
   const today = moment().startOf('day');
 
   const days: DayInfo[] = [];
@@ -49,8 +58,8 @@ function useCalendarDays(viewMonth: moment.Moment) {
 
     // Ovulation ~day 14 from period start (cycle - 14)
     const ovulationDay = cycleLength - 14;
-    const isOvulation = cycleDay === ovulationDay;
-    const isFertile = cycleDay >= ovulationDay - 5 && cycleDay <= ovulationDay + 1 && !isPeriod;
+    const isOvulation = calendarSettings.showOvulation && cycleDay === ovulationDay;
+    const isFertile = calendarSettings.showFertile && cycleDay >= ovulationDay - 5 && cycleDay <= ovulationDay + 1 && !isPeriod;
 
     days.push({
       date,
@@ -75,7 +84,7 @@ export default function CalendarScreen() {
   const [viewMonth, setViewMonth] = useState(moment().startOf('month'));
   const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
   const days = useCalendarDays(viewMonth);
-  const { dailyLogs } = useSelector((s: RootState) => s.period);
+  const { dailyLogs, calendarSettings } = useSelector((s: RootState) => s.period);
 
   const selectedLog = dailyLogs[selectedDate];
   const selectedDayInfo = days.find(d => d.date === selectedDate);
@@ -116,14 +125,18 @@ export default function CalendarScreen() {
             <View style={[styles.legendDot, { backgroundColor: Colors.primary }]} />
             <Text style={styles.legendText}>Period</Text>
           </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: Colors.green }]} />
-            <Text style={styles.legendText}>Fertile</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: Colors.orange }]} />
-            <Text style={styles.legendText}>Ovulation</Text>
-          </View>
+          {calendarSettings.showFertile && (
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: Colors.green }]} />
+              <Text style={styles.legendText}>Fertile</Text>
+            </View>
+          )}
+          {calendarSettings.showOvulation && (
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: Colors.orange }]} />
+              <Text style={styles.legendText}>Ovulation</Text>
+            </View>
+          )}
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: Colors.blue, borderRadius: 2 }]} />
             <Text style={styles.legendText}>Logged</Text>
@@ -134,7 +147,9 @@ export default function CalendarScreen() {
         <View style={styles.calendarContainer}>
           {/* Weekday headers */}
           <View style={styles.weekRow}>
-            {WEEKDAYS.map(d => (
+            {(calendarSettings.firstDayMonday 
+              ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] 
+              : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']).map(d => (
               <Text key={d} style={styles.weekday}>{d}</Text>
             ))}
           </View>
@@ -148,6 +163,7 @@ export default function CalendarScreen() {
                              day.isOvulation ? Colors.orange :
                              day.isFertile ? Colors.green + 'CC' :
                              isSelected ? Colors.primaryBg : 'transparent';
+              
               const textColor = (day.isToday || day.isPeriod || day.isOvulation || day.isFertile)
                 ? Colors.white
                 : isSelected ? Colors.primary

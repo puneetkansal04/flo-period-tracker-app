@@ -87,9 +87,6 @@ export default function InsightsScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Insights</Text>
-        <TouchableOpacity onPress={() => router.push('/search')}>
-          <Ionicons name="search-outline" size={24} color={Colors.textPrimary} />
-        </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
@@ -113,7 +110,35 @@ export default function InsightsScreen() {
             </View>
           </View>
 
-          {/* Progress bar */}
+          {/* Cycle Analysis */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Cycle Analysis</Text>
+          <View style={styles.analysisRow}>
+            <View style={styles.analysisCard}>
+              <Ionicons name="repeat" size={24} color={Colors.primary} />
+              <Text style={styles.analysisValue}>
+                {periodHistory && periodHistory.length > 1 ? '98%' : '100%'}
+              </Text>
+              <Text style={styles.analysisLabel}>Regularity</Text>
+            </View>
+            <View style={styles.analysisCard}>
+              <Ionicons name="calendar-outline" size={24} color={Colors.orange} />
+              <Text style={styles.analysisValue}>
+                {periodHistory && periodHistory.length > 0 
+                  ? `${Math.round(periodHistory.reduce((acc, h) => acc + moment(h.end).diff(moment(h.start), 'days'), 0) / periodHistory.length)} d`
+                  : `${cycleLength} d`}
+              </Text>
+              <Text style={styles.analysisLabel}>Avg Cycle</Text>
+            </View>
+            <View style={styles.analysisCard}>
+              <Ionicons name="water-outline" size={24} color={Colors.primary} />
+              <Text style={styles.analysisValue}>{periodLength} days</Text>
+              <Text style={styles.analysisLabel}>Avg Period</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Categories Grid */}
           <View style={styles.progressWrap}>
             <View style={styles.progressTrack}>
               <View style={[styles.progressFill, { width: `${cyclePhasePercent}%` }]} />
@@ -125,9 +150,15 @@ export default function InsightsScreen() {
           </View>
         </View>
 
-        {/* Cycle Length Variation Chart */}
+        {/* Cycle History Graph */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Cycle length variation</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Cycle length variation</Text>
+            <TouchableOpacity style={styles.pdfBtn}>
+              <Ionicons name="document-text-outline" size={18} color={Colors.primary} />
+              <Text style={styles.pdfBtnText}>Export PDF</Text>
+            </TouchableOpacity>
+          </View>
           <View style={styles.chartContainer}>
             <LineChart
               data={{
@@ -140,9 +171,16 @@ export default function InsightsScreen() {
                   }
                 ]
               }}
-              width={screenWidth - Spacing.base * 2 - 20} // width padding
-              height={220}
-              chartConfig={chartConfig}
+              width={screenWidth - Spacing.base * 2 - 20}
+              height={180}
+              chartConfig={{
+                ...chartConfig,
+                decimalPlaces: 0,
+                color: (opacity = 1) => Colors.primary,
+                labelColor: (opacity = 1) => Colors.textSecondary,
+                style: { borderRadius: 16 },
+                propsForDots: { r: "6", strokeWidth: "2", stroke: Colors.primary }
+              }}
               bezier
               style={{
                 marginVertical: 8,
@@ -380,4 +418,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base, paddingVertical: 8,
   },
   premiumBtnText: { color: Colors.white, fontSize: 13, fontWeight: '700' },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
+  pdfBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.primary + '15', paddingHorizontal: 12, paddingVertical: 6, borderRadius: BorderRadius.full },
+  pdfBtnText: { fontSize: 12, color: Colors.primary, fontWeight: '700' },
+  analysisRow: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.xl },
+  analysisCard: { flex: 1, backgroundColor: Colors.white, padding: Spacing.md, borderRadius: BorderRadius.xl, alignItems: 'center', gap: 4, elevation: 3 },
+  analysisValue: { fontSize: 16, fontWeight: '800', color: Colors.textPrimary, marginTop: 4 },
+  analysisLabel: { fontSize: 11, color: Colors.textSecondary, fontWeight: '600' },
 });

@@ -14,16 +14,17 @@ import { FLOW_OPTIONS, MOODS, SYMPTOMS } from '@/constants/LogOptions';
 type FlowType = 'spotting' | 'light' | 'medium' | 'heavy' | undefined;
 
 function ChipButton({ label, emoji, selected, onPress }: {
-  label: string; emoji: string; selected: boolean; onPress: () => void;
+  label: string; emoji?: string; selected: boolean; onPress: () => void;
 }) {
   return (
     <TouchableOpacity
       style={[styles.chip, selected && styles.chipSelected]}
       onPress={onPress}
-      activeOpacity={0.8}
+      activeOpacity={0.7}
     >
-      <Text style={styles.chipEmoji}>{emoji}</Text>
-      <Text style={[styles.chipLabel, selected && styles.chipLabelSelected]}>{label}</Text>
+      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+        {emoji ? `${emoji} ${label}` : label}
+      </Text>
     </TouchableOpacity>
   );
 }
@@ -43,6 +44,10 @@ export default function LogDayScreen() {
   const [symptoms, setSymptoms] = useState<string[]>(existingLog?.symptoms || []);
   const [weight, setWeight] = useState<string>(existingWeight ? existingWeight.toString() : '');
   const [water, setWater] = useState<number>(existingWater || 0);
+  const [mucus, setMucus] = useState<string | undefined>(existingLog?.mucus);
+  const [sex, setSex] = useState<boolean | undefined>(existingLog?.sex);
+  const [pill, setPill] = useState<boolean | undefined>(existingLog?.pill);
+  const [temp, setTemp] = useState<string>(existingLog?.temp || '');
 
   const toggleMood = (key: string) => {
     setMoods(prev => prev.includes(key) ? prev.filter(m => m !== key) : [...prev, key]);
@@ -52,7 +57,7 @@ export default function LogDayScreen() {
   };
 
   const handleSave = () => {
-    dispatch(logDay({ date: logDate, log: { flow, moods, symptoms } }));
+    dispatch(logDay({ date: logDate, log: { flow, moods, symptoms, mucus, sex, pill, temp } }));
     if (weight) dispatch(logWeight({ date: logDate, weight: parseFloat(weight) }));
     dispatch(logWater({ date: logDate, water }));
     router.back();
@@ -127,6 +132,26 @@ export default function LogDayScreen() {
           </View>
         </View>
 
+        {/* Temperature */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionIconBg, { backgroundColor: '#FEF2F2' }]}>
+              <Ionicons name="thermometer-outline" size={18} color="#EF4444" />
+            </View>
+            <Text style={styles.sectionTitle}>Temperature (BBT)</Text>
+          </View>
+          <View style={styles.weightInputRow}>
+            <TextInput
+              style={styles.weightInput}
+              placeholder="36.5"
+              keyboardType="numeric"
+              value={temp}
+              onChangeText={setTemp}
+            />
+            <Text style={styles.weightUnit}>°C</Text>
+          </View>
+        </View>
+
         {/* Symptoms */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
@@ -166,6 +191,74 @@ export default function LogDayScreen() {
               onChangeText={setWeight}
             />
             <Text style={styles.weightUnit}>kg</Text>
+          </View>
+        </View>
+
+        {/* Secretions */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionIconBg, { backgroundColor: '#FCE7F3' }]}>
+              <Ionicons name="color-wand-outline" size={18} color="#DB2777" />
+            </View>
+            <Text style={styles.sectionTitle}>Secretions</Text>
+          </View>
+          <View style={styles.chipsWrap}>
+            {['Dry', 'Creamy', 'Watery', 'Eggwhite', 'Sticky'].map(type => (
+              <ChipButton
+                key={type}
+                label={type}
+                selected={mucus === type}
+                onPress={() => setMucus(type)}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/* Sexual Activity */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionIconBg, { backgroundColor: '#FFE4E6' }]}>
+              <Ionicons name="heart-outline" size={18} color="#E11D48" />
+            </View>
+            <Text style={styles.sectionTitle}>Sexual Activity</Text>
+          </View>
+          <View style={styles.row}>
+            <TouchableOpacity 
+              style={[styles.toggleBtn, sex === true && styles.toggleBtnActive]}
+              onPress={() => setSex(true)}
+            >
+              <Text style={[styles.toggleBtnText, sex === true && styles.toggleBtnTextActive]}>Yes</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.toggleBtn, sex === false && styles.toggleBtnActive]}
+              onPress={() => setSex(false)}
+            >
+              <Text style={[styles.toggleBtnText, sex === false && styles.toggleBtnTextActive]}>No</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Pills */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionIconBg, { backgroundColor: '#E0F2FE' }]}>
+              <Ionicons name="medical-outline" size={18} color="#0284C7" />
+            </View>
+            <Text style={styles.sectionTitle}>Medication / Pill</Text>
+          </View>
+          <View style={styles.row}>
+            <TouchableOpacity 
+              style={[styles.toggleBtn, pill === true && styles.toggleBtnActive]}
+              onPress={() => setPill(true)}
+            >
+              <Text style={[styles.toggleBtnText, pill === true && styles.toggleBtnTextActive]}>Taken</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.toggleBtn, pill === false && styles.toggleBtnActive]}
+              onPress={() => setPill(false)}
+            >
+              <Text style={[styles.toggleBtnText, pill === false && styles.toggleBtnTextActive]}>Not Taken</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -266,8 +359,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   chipEmoji: { fontSize: 16 },
-  chipLabel: { fontSize: 13, color: Colors.textPrimary, fontWeight: '500' },
-  chipLabelSelected: { color: Colors.white, fontWeight: '700' },
+  chipText: { fontSize: 13, color: Colors.textPrimary, fontWeight: '500' },
+  chipTextSelected: { color: Colors.white, fontWeight: '700' },
   
   // Weight & Water
   weightInputRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
@@ -286,4 +379,13 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: Colors.primary + '30'
   },
   waterAddText: { fontSize: 14, fontWeight: '700', color: Colors.primary },
+  row: { flexDirection: 'row', gap: Spacing.md },
+  toggleBtn: { 
+    flex: 1, paddingVertical: 12, borderRadius: BorderRadius.lg, 
+    backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border,
+    alignItems: 'center',
+  },
+  toggleBtnActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  toggleBtnText: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
+  toggleBtnTextActive: { color: Colors.white },
 });

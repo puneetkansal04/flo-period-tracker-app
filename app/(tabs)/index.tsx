@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar, Animat
 import { useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
-import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
+import { Colors, BorderRadius, Spacing, Shadows } from '@/constants/FloColors';
 import { registerForPushNotificationsAsync, scheduleCycleNotifications } from '@/utils/notifications';
 import { Ionicons } from '@expo/vector-icons';
 import moment from 'moment';
@@ -81,7 +81,6 @@ function useCycleCalculations() {
   }
 
   const progressFraction = currentDay / cycleLength;
-
   return {
     currentDay,
     cycleLength,
@@ -98,6 +97,9 @@ function useCycleCalculations() {
     isOvulationDay,
     isInPeriod,
     healthTip,
+    daysPassed,
+    title: statusLabel,
+    subtitle: phase.charAt(0).toUpperCase() + phase.slice(1),
   };
 }
 
@@ -159,7 +161,7 @@ export default function TodayScreen() {
     });
   }, []);
 
-  const { dailyLogs, isPremium } = useSelector((state: RootState) => state.period);
+  const { dailyLogs, isPremium, isPregnant, lastPeriodDate, name } = useSelector((state: RootState) => state.period);
   const today = moment().format('YYYY-MM-DD');
   const todayLog = (dailyLogs || {})[today];
 
@@ -209,6 +211,12 @@ export default function TodayScreen() {
   const { circleColor, statusLabel, currentDay, cycleLength, phase,
     daysUntilPeriod, daysUntilOvulation, nextPeriodDate, ovulationDate, progressFraction } = calcs;
 
+  // Pregnancy calculations
+  const pregWeeks = Math.floor(calcs.daysPassed / 7);
+  const pregDays = calcs.daysPassed % 7;
+  const babySize = pregWeeks < 4 ? 'Poppy Seed' : pregWeeks < 8 ? 'Raspberry' : pregWeeks < 12 ? 'Lime' : pregWeeks < 16 ? 'Avocado' : 'Mango';
+  const babyEmoji = pregWeeks < 4 ? '🌱' : pregWeeks < 8 ? '🍓' : pregWeeks < 12 ? '🍋' : pregWeeks < 16 ? '🥑' : '🥭';
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
@@ -222,11 +230,11 @@ export default function TodayScreen() {
         <View style={styles.headerRight}>
           {!isPremium && (
             <TouchableOpacity onPress={() => setPaywallVisible(true)} style={styles.headerIcon}>
-              <Ionicons name="ribbon-outline" size={24} color={Colors.primary} />
+              <Ionicons name="ribbon-outline" size={22} color={Colors.primary} />
             </TouchableOpacity>
           )}
-          <TouchableOpacity onPress={() => setPaywallVisible(true)} style={styles.headerIcon}>
-            <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
+          <TouchableOpacity onPress={() => router.push('/reminders')} style={styles.headerIcon}>
+            <Ionicons name="alarm-outline" size={24} color={Colors.textPrimary} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/settings')} style={styles.profileBtn}>
             <View style={styles.avatar}>
@@ -241,14 +249,33 @@ export default function TodayScreen() {
         contentContainerStyle={styles.scroll}
       >
         <View style={styles.mainCircleContainer}>
-          <View style={[styles.circleOuter, { borderColor: calcs.circleColor + '40', borderStyle: 'dashed' }]}>
+          <View style={[styles.circleOuter, { borderColor: isPregnant ? '#4ADE80' : calcs.circleColor + '40', borderStyle: 'dashed' }]}>
             <View style={styles.circleInner}>
               <View style={styles.circleCore}>
-                <Text style={[styles.circleTitle, { color: calcs.circleColor }]}>{calcs.title}</Text>
-                <View style={[styles.phaseBadge, { backgroundColor: calcs.circleColor + '20' }]}>
-                  <View style={[styles.phaseDot, { backgroundColor: calcs.circleColor }]} />
-                  <Text style={[styles.phaseBadgeText, { color: calcs.circleColor }]}>{calcs.subtitle}</Text>
-                </View>
+                {isPregnant ? (
+                  <>
+                    <Text style={[styles.circleTitle, { color: '#16A34A' }]}>Week {pregWeeks}</Text>
+                    <Text style={styles.pregDaysText}>Day {pregDays}</Text>
+                    <View style={styles.babyBadge}>
+                      <Text style={styles.babyEmoji}>{babyEmoji}</Text>
+                      <Text style={styles.babySizeText}>Size of a {babySize}</Text>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <Text style={[styles.circleTitle, { color: calcs.circleColor }]}>{calcs.title}</Text>
+                    <View style={[styles.phaseBadge, { backgroundColor: calcs.circleColor + '20' }]}>
+                      <View style={[styles.phaseDot, { backgroundColor: calcs.circleColor }]} />
+                      <Text style={[styles.phaseBadgeText, { color: calcs.circleColor }]}>{calcs.subtitle}</Text>
+                    </View>
+                    <View style={styles.pregnancyChanceContainer}>
+                      <Text style={styles.pregnancyChanceLabel}>Pregnancy chance</Text>
+                      <Text style={[styles.pregnancyChanceValue, { color: calcs.circleColor }]}>
+                        {calcs.phase === 'ovulation' ? 'Peak' : calcs.isInFertile ? 'High' : 'Low'}
+                      </Text>
+                    </View>
+                  </>
+                )}
               </View>
             </View>
           </View>
@@ -294,6 +321,21 @@ export default function TodayScreen() {
           </View>
           <Text style={styles.insightText}>{calcs.healthTip}</Text>
         </View>
+
+        {/* Daily Reminders / Plans Card */}
+        <TouchableOpacity 
+          style={styles.remindersBanner}
+          onPress={() => router.push('/reminders')}
+        >
+          <View style={styles.remindersIconBg}>
+            <Ionicons name="alarm" size={24} color={Colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.remindersTitle}>Your Daily Plan</Text>
+            <Text style={styles.remindersSubtitle}>Set alarms for water, pills & vitamins</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
+        </TouchableOpacity>
 
         {/* Today's Log Summary */}
         {todayLog && (
@@ -381,6 +423,7 @@ const styles = StyleSheet.create({
   headerCycleDay: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   headerIcon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  profileBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   avatar: {
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center',
@@ -399,13 +442,21 @@ const styles = StyleSheet.create({
   },
   phaseDot: { width: 8, height: 8, borderRadius: 4 },
   phaseBadgeText: { fontSize: 14, fontWeight: '700' },
+  pregnancyChanceContainer: { alignItems: 'center', marginTop: 12 },
+  pregnancyChanceLabel: { fontSize: 11, color: Colors.textSecondary, fontWeight: '600', textTransform: 'uppercase' },
+  pregnancyChanceValue: { fontSize: 15, fontWeight: '800', marginTop: 2 },
+  pregDaysText: { fontSize: 18, fontWeight: '600', color: Colors.textSecondary, marginTop: -8 },
+  babyBadge: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, backgroundColor: '#F0FDF4', paddingHorizontal: 12, paddingVertical: 6, borderRadius: BorderRadius.full },
+  babyEmoji: { fontSize: 20 },
+  babySizeText: { fontSize: 13, fontWeight: '700', color: '#16A34A' },
   logTodayBtn: { 
     position: 'absolute', bottom: 10,
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: Colors.primary, paddingHorizontal: 24, paddingVertical: 14,
-    borderRadius: BorderRadius.full, ...Shadows.button,
+    borderRadius: BorderRadius.full, elevation: 5,
   },
   logTodayBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
+
 
   insightCard: {
     backgroundColor: Colors.white,
@@ -491,4 +542,13 @@ const styles = StyleSheet.create({
     height: CIRCLE_SIZE,
     borderRadius: CIRCLE_SIZE / 2,
   },
+  remindersBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
+    backgroundColor: Colors.white, marginHorizontal: Spacing.base,
+    padding: Spacing.lg, borderRadius: BorderRadius.xl, marginTop: Spacing.lg,
+    elevation: 3,
+  },
+  remindersIconBg: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primary + '15', alignItems: 'center', justifyContent: 'center' },
+  remindersTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
+  remindersSubtitle: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
 });

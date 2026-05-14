@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar, Switch, Alert } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store';
-import { setGoal, resetOnboarding, GoalType } from '@/store/slices/periodSlice';
+import { setGoal, resetOnboarding, GoalType, setPregnant } from '@/store/slices/periodSlice';
 import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -41,7 +41,7 @@ const GOALS: { key: GoalType; label: string; emoji: string }[] = [
 export default function SettingsScreen() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const { goal, cycleLength, periodLength, birthYear } = useSelector((s: RootState) => s.period);
+  const { goal, cycleLength, periodLength, birthYear, isPregnant } = useSelector((s: RootState) => s.period);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [remindersEnabled, setRemindersEnabled] = useState(true);
 
@@ -103,6 +103,38 @@ export default function SettingsScreen() {
                 </React.Fragment>
               );
             })}
+          </View>
+        </View>
+
+        <View style={styles.sectionGroup}>
+          <Text style={styles.sectionGroupTitle}>Reminders & Plans</Text>
+          <View style={styles.card}>
+            <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/reminders')}>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingLabel}>Daily Reminders</Text>
+                <Text style={styles.settingSubtitle}>Set custom alarms for water, pills, etc.</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* App Mode */}
+        <View style={styles.sectionGroup}>
+          <Text style={styles.sectionGroupTitle}>App Mode</Text>
+          <View style={styles.card}>
+            <View style={styles.settingRow}>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingLabel}>I am pregnant</Text>
+                <Text style={styles.settingSubtitle}>Switch to pregnancy tracking</Text>
+              </View>
+              <Switch 
+                value={isPregnant} 
+                onValueChange={(val) => { dispatch(setPregnant(val)); }}
+                trackColor={{ false: Colors.lightGray, true: Colors.primary + '80' }}
+                thumbColor={isPregnant ? Colors.primary : Colors.borderDark}
+              />
+            </View>
           </View>
         </View>
 
@@ -178,7 +210,6 @@ export default function SettingsScreen() {
               label="Rate the app"
               color={Colors.orange}
               onPress={() => {
-                // This will be handled by the daily prompt too, but manual trigger is good
                 Alert.alert("Rate us", "Thank you for using Serene Cycle!");
               }}
             />

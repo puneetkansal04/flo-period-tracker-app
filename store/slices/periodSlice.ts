@@ -10,6 +10,10 @@ export interface DailyLog {
   discharge?: string[];
   sleep?: string;
   notes?: string;
+  mucus?: string;
+  sex?: boolean;
+  pill?: boolean;
+  temp?: string;
 }
 
 export interface PeriodState {
@@ -46,6 +50,13 @@ export interface PeriodState {
 
   // Plan
   isPremium: boolean;
+  isPregnant: boolean;
+  calendarSettings: {
+    showOvulation: boolean;
+    showFertile: boolean;
+    showPregnancyChance: boolean;
+    firstDayMonday: boolean;
+  };
 
   // Logs
   weightLogs: { [date: string]: number };
@@ -82,6 +93,13 @@ const initialState: PeriodState = {
   name: null,
   email: null,
   isPremium: false,
+  isPregnant: false,
+  calendarSettings: {
+    showOvulation: true,
+    showFertile: true,
+    showPregnancyChance: true,
+    firstDayMonday: false,
+  },
   weightLogs: {},
   waterLogs: {},
   hasRated: false,
@@ -169,6 +187,12 @@ const periodSlice = createSlice({
     setPremium(state, action: PayloadAction<boolean>) {
       state.isPremium = action.payload;
     },
+    setPregnant: (state, action: PayloadAction<boolean>) => {
+      state.isPregnant = action.payload;
+    },
+    updateCalendarSettings: (state, action: PayloadAction<Partial<PeriodState['calendarSettings']>>) => {
+      state.calendarSettings = { ...state.calendarSettings, ...action.payload };
+    },
     logWeight(state, action: PayloadAction<{ date: string; weight: number }>) {
       state.weightLogs[action.payload.date] = action.payload.weight;
     },
@@ -213,6 +237,8 @@ export const {
   logWater,
   setHasRated,
   setLastRatingPromptDate,
+  setPregnant,
+  updateCalendarSettings,
 } = periodSlice.actions;
 
 export default periodSlice.reducer;
