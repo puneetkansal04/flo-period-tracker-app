@@ -13,7 +13,7 @@ export default function PaywallScreen() {
     { icon: 'calendar', title: 'Advanced cycle predictions', subtitle: 'Know exactly when your period will start' },
     { icon: 'body', title: 'Daily health insights', subtitle: 'Personalized articles based on your logs' },
     { icon: 'bar-chart', title: 'Symptom analysis', subtitle: 'Identify patterns in your cycle' },
-    { icon: 'chatbubbles', title: 'Secret Chats access', subtitle: 'Ask anonymous questions to the community' },
+    { icon: 'document-text', title: 'Personalized PDF reports', subtitle: 'Share your cycle data with your doctor' },
   ];
 
   return (
