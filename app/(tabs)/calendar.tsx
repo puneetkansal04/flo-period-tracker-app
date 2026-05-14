@@ -231,7 +231,7 @@ export default function CalendarScreen() {
           )}
         </View>
 
-        <View style={{ height: 30 }} />
+        <View style={{ height: 80 }} />
       </ScrollView>
     </SafeAreaView>
   );

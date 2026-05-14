@@ -216,7 +216,7 @@ export default function InsightsScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={{ height: 30 }} />
+        <View style={{ height: 80 }} />
       </ScrollView>
     </SafeAreaView>
   );
