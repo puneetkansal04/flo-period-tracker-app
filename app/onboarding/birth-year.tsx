@@ -1,141 +1,213 @@
-import React, { useState } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, useColorScheme, FlatList } from 'react-native';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import React, { useState, useRef } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, StatusBar, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useDispatch } from 'react-redux';
 import { setBirthYear } from '@/store/slices/periodSlice';
+import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
+import { Ionicons } from '@expo/vector-icons';
+
+const { height } = Dimensions.get('window');
+const ITEM_HEIGHT = 52;
+const VISIBLE_ITEMS = 5;
+
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: 100 }, (_, i) => currentYear - 10 - i);
 
 export default function BirthYearScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  
-  const backgroundColor = isDark ? '#121212' : '#F9F9F9';
-  const cardBgColor = isDark ? '#1E1E1E' : '#FFFFFF';
-  const textColor = isDark ? '#FFFFFF' : '#333333';
-  const subTextColor = isDark ? '#AAAAAA' : '#666666';
-  const primaryColor = '#FF5A76';
-
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
-
-  // Generate years from 1950 to current year
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: currentYear - 1950 + 1 }, (_, i) => currentYear - i);
-
   const dispatch = useDispatch();
+  const [selectedYear, setSelectedYear] = useState(currentYear - 25);
+  const flatListRef = useRef<FlatList>(null);
+
   const handleNext = () => {
-    if (selectedYear) {
-      dispatch(setBirthYear(selectedYear));
-      router.push('/onboarding/goal');
-    }
+    dispatch(setBirthYear(selectedYear));
+    router.push('/onboarding/last-period');
   };
 
+  const initialIndex = years.indexOf(selectedYear);
+
   return (
-    <ThemedView style={[styles.container, { backgroundColor }]}>
-      <ThemedView style={[styles.content, { backgroundColor }]}>
-        <ThemedText type="title" style={[styles.title, { color: textColor }]}>When were you born?</ThemedText>
-        <ThemedText style={[styles.subtitle, { color: subTextColor }]}>
-          Your cycle can change with age. Knowing it helps us make better predictions.
-        </ThemedText>
+    <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <View style={styles.progressBar}>
+          <View style={[styles.progressFill, { width: '16%' }]} />
+        </View>
+      </View>
 
-        <FlatList
-          data={years}
-          keyExtractor={(item) => item.toString()}
-          style={styles.list}
-          renderItem={({ item }) => (
-            <TouchableOpacity 
-              style={[
-                styles.yearItem, 
-                { 
-                  backgroundColor: selectedYear === item ? primaryColor : cardBgColor,
-                  borderColor: selectedYear === item ? primaryColor : (isDark ? '#333' : '#E0E0E0')
-                }
-              ]}
-              onPress={() => setSelectedYear(item)}
-            >
-              <ThemedText style={[
-                styles.yearText, 
-                { color: selectedYear === item ? '#FFFFFF' : textColor }
-              ]}>
-                {item}
-              </ThemedText>
-            </TouchableOpacity>
-          )}
-        />
+      <View style={styles.container}>
+        <Text style={styles.title}>What year were you born?</Text>
+        <Text style={styles.subtitle}>We'll use this to personalize your experience</Text>
 
-        <ThemedView style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={[styles.button, { backgroundColor: selectedYear ? primaryColor : subTextColor }]} 
-            onPress={handleNext}
-            disabled={!selectedYear}
-          >
-            <ThemedText style={[styles.buttonText, { color: '#FFFFFF' }]}>Next</ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
-      </ThemedView>
-    </ThemedView>
+        {/* Drum-roll picker */}
+        <View style={styles.pickerContainer}>
+          {/* Selection highlight */}
+          <View style={styles.selectionHighlight} pointerEvents="none" />
+
+          <FlatList
+            ref={flatListRef}
+            data={years}
+            keyExtractor={(item) => String(item)}
+            showsVerticalScrollIndicator={false}
+            snapToInterval={ITEM_HEIGHT}
+            decelerationRate="fast"
+            contentContainerStyle={{
+              paddingVertical: ITEM_HEIGHT * 2,
+            }}
+            initialScrollIndex={initialIndex}
+            getItemLayout={(_, index) => ({
+              length: ITEM_HEIGHT,
+              offset: ITEM_HEIGHT * index,
+              index,
+            })}
+            onMomentumScrollEnd={(e) => {
+              const index = Math.round(e.nativeEvent.contentOffset.y / ITEM_HEIGHT);
+              if (index >= 0 && index < years.length) {
+                setSelectedYear(years[index]);
+              }
+            }}
+            renderItem={({ item }) => {
+              const isSelected = item === selectedYear;
+              return (
+                <TouchableOpacity
+                  style={styles.yearItem}
+                  onPress={() => {
+                    const idx = years.indexOf(item);
+                    flatListRef.current?.scrollToIndex({ index: idx, animated: true });
+                    setSelectedYear(item);
+                  }}
+                >
+                  <Text style={[styles.yearText, isSelected && styles.yearTextSelected]}>
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              );
+            }}
+          />
+        </View>
+
+        <Text style={styles.selectedYearLabel}>Selected: {selectedYear}</Text>
+      </View>
+
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.nextBtn} onPress={handleNext} activeOpacity={0.85}>
+          <Text style={styles.nextBtnText}>Next</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: Colors.white,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.md,
+    gap: Spacing.md,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  progressBar: {
+    flex: 1,
+    height: 4,
+    backgroundColor: Colors.lightGray,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: Colors.primary,
+    borderRadius: 2,
+  },
   container: {
     flex: 1,
-    paddingTop: 60,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: Spacing.lg,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
+    fontSize: 26,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
+    lineHeight: 34,
+    marginTop: Spacing.md,
   },
   subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 30,
-    lineHeight: 22,
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginBottom: Spacing['2xl'],
   },
-  list: {
-    flex: 1,
-    marginBottom: 20,
+  pickerContainer: {
+    height: ITEM_HEIGHT * VISIBLE_ITEMS,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  selectionHighlight: {
+    position: 'absolute',
+    top: ITEM_HEIGHT * 2,
+    left: 0,
+    right: 0,
+    height: ITEM_HEIGHT,
+    backgroundColor: Colors.primaryBg,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    zIndex: 1,
   },
   yearItem: {
-    height: 60,
-    borderRadius: 12,
+    height: ITEM_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
   },
   yearText: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    color: Colors.textMuted,
+    fontWeight: '400',
   },
-  buttonContainer: {
-    paddingVertical: 20,
+  yearTextSelected: {
+    fontSize: 26,
+    color: Colors.primary,
+    fontWeight: '700',
   },
-  button: {
-    height: 54,
-    borderRadius: 27,
+  selectedYearLabel: {
+    textAlign: 'center',
+    color: Colors.textSecondary,
+    fontSize: 14,
+    marginTop: Spacing.md,
+  },
+  footer: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.xl,
+    paddingTop: Spacing.md,
+    backgroundColor: Colors.white,
+  },
+  nextBtn: {
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.full,
+    height: 52,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
   },
-  buttonText: {
+  nextBtnText: {
+    color: Colors.white,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
 });

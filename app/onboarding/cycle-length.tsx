@@ -1,137 +1,152 @@
 import React, { useState } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, useColorScheme, FlatList } from 'react-native';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useDispatch } from 'react-redux';
 import { setCycleLength } from '@/store/slices/periodSlice';
+import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
+import { Ionicons } from '@expo/vector-icons';
+
+const MIN = 21;
+const MAX = 45;
 
 export default function CycleLengthScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  
-  const backgroundColor = isDark ? '#121212' : '#F9F9F9';
-  const cardBgColor = isDark ? '#1E1E1E' : '#FFFFFF';
-  const textColor = isDark ? '#FFFFFF' : '#333333';
-  const subTextColor = isDark ? '#AAAAAA' : '#666666';
-  const primaryColor = '#FF5A76';
-
-  const [selectedLength, setSelectedLength] = useState<number>(28);
-
-  // Generate cycle lengths from 20 to 45
-  const lengths = Array.from({ length: 45 - 20 + 1 }, (_, i) => 20 + i);
-
   const dispatch = useDispatch();
+  const [value, setValue] = useState(28);
+
   const handleNext = () => {
-    dispatch(setCycleLength(selectedLength));
+    dispatch(setCycleLength(value));
     router.push('/onboarding/period-length');
   };
 
+  const description =
+    value < 24 ? 'Short cycle' :
+    value <= 35 ? 'Typical cycle' :
+    'Long cycle';
+
   return (
-    <ThemedView style={[styles.container, { backgroundColor }]}>
-      <ThemedView style={[styles.content, { backgroundColor }]}>
-        <ThemedText type="title" style={[styles.title, { color: textColor }]}>How long is your cycle?</ThemedText>
-        <ThemedText style={[styles.subtitle, { color: subTextColor }]}>
-          The number of days between the first day of one period and the first day of the next.
-        </ThemedText>
+    <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <View style={styles.progressBar}>
+          <View style={[styles.progressFill, { width: '32%' }]} />
+        </View>
+      </View>
 
-        <FlatList
-          data={lengths}
-          keyExtractor={(item) => item.toString()}
-          style={styles.list}
-          renderItem={({ item }) => (
-            <TouchableOpacity 
-              style={[
-                styles.item, 
-                { 
-                  backgroundColor: selectedLength === item ? primaryColor : cardBgColor,
-                  borderColor: selectedLength === item ? primaryColor : (isDark ? '#333' : '#E0E0E0')
-                }
-              ]}
-              onPress={() => setSelectedLength(item)}
-            >
-              <ThemedText style={[
-                styles.itemText, 
-                { color: selectedLength === item ? '#FFFFFF' : textColor }
-              ]}>
-                {item} days
-              </ThemedText>
-            </TouchableOpacity>
-          )}
-        />
+      <View style={styles.container}>
+        <Text style={styles.title}>How long is your cycle?</Text>
+        <Text style={styles.subtitle}>Count from the first day of one period to the first day of the next</Text>
 
-        <ThemedView style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={[styles.button, { backgroundColor: primaryColor }]} 
-            onPress={handleNext}
+        {/* Big number display */}
+        <View style={styles.valueContainer}>
+          <Text style={styles.valueNumber}>{value}</Text>
+          <Text style={styles.valueDays}>days</Text>
+          <View style={styles.descBadge}>
+            <Text style={styles.descText}>{description}</Text>
+          </View>
+        </View>
+
+        {/* Slider-style number line */}
+        <View style={styles.controls}>
+          <TouchableOpacity
+            style={[styles.controlBtn, value <= MIN && styles.controlBtnDisabled]}
+            onPress={() => setValue(v => Math.max(MIN, v - 1))}
           >
-            <ThemedText style={[styles.buttonText, { color: '#FFFFFF' }]}>Next</ThemedText>
+            <Ionicons name="remove" size={24} color={value <= MIN ? Colors.borderDark : Colors.white} />
           </TouchableOpacity>
-        </ThemedView>
-      </ThemedView>
-    </ThemedView>
+
+          <View style={styles.sliderRow}>
+            {Array.from({ length: MAX - MIN + 1 }, (_, i) => MIN + i).map(n => {
+              const active = n <= value;
+              const selected = n === value;
+              return (
+                <TouchableOpacity
+                  key={n}
+                  style={[
+                    styles.tick,
+                    active && styles.tickActive,
+                    selected && styles.tickSelected,
+                  ]}
+                  onPress={() => setValue(n)}
+                />
+              );
+            })}
+          </View>
+
+          <TouchableOpacity
+            style={[styles.controlBtn, value >= MAX && styles.controlBtnDisabled]}
+            onPress={() => setValue(v => Math.min(MAX, v + 1))}
+          >
+            <Ionicons name="add" size={24} color={value >= MAX ? Colors.borderDark : Colors.white} />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.rangeHint}>{MIN} – {MAX} days</Text>
+      </View>
+
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.nextBtn} onPress={handleNext} activeOpacity={0.85}>
+          <Text style={styles.nextBtnText}>Next</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 60,
+  safe: { flex: 1, backgroundColor: Colors.white },
+  header: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: Spacing.base, paddingVertical: Spacing.md, gap: Spacing.md,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
+  backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  progressBar: { flex: 1, height: 4, backgroundColor: Colors.lightGray, borderRadius: 2, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: Colors.primary, borderRadius: 2 },
+  container: { flex: 1, paddingHorizontal: Spacing.lg, paddingTop: Spacing.md },
+  title: { fontSize: 26, fontWeight: '700', color: Colors.textPrimary, marginBottom: Spacing.sm, lineHeight: 34 },
+  subtitle: { fontSize: 14, color: Colors.textSecondary, marginBottom: Spacing['3xl'], lineHeight: 20 },
+  valueContainer: { alignItems: 'center', marginBottom: Spacing['3xl'] },
+  valueNumber: { fontSize: 80, fontWeight: '700', color: Colors.primary, lineHeight: 90 },
+  valueDays: { fontSize: 18, color: Colors.textSecondary, marginBottom: Spacing.md },
+  descBadge: {
+    backgroundColor: Colors.primaryBg,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
+  descText: { color: Colors.primary, fontSize: 14, fontWeight: '600' },
+  controls: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  controlBtn: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: Colors.primary,
+    alignItems: 'center', justifyContent: 'center',
   },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 30,
-    lineHeight: 22,
+  controlBtnDisabled: { backgroundColor: Colors.lightGray },
+  sliderRow: {
+    flex: 1, flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', height: 32,
   },
-  list: {
-    flex: 1,
-    marginBottom: 20,
+  tick: {
+    flex: 1, height: 4, borderRadius: 2,
+    backgroundColor: Colors.lightGray,
+    marginHorizontal: 1,
   },
-  item: {
-    height: 60,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+  tickActive: { backgroundColor: Colors.primaryLight },
+  tickSelected: { backgroundColor: Colors.primary, height: 14, borderRadius: 4 },
+  rangeHint: { textAlign: 'center', fontSize: 12, color: Colors.textMuted, marginTop: Spacing.md },
+  footer: {
+    paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xl,
+    paddingTop: Spacing.md, backgroundColor: Colors.white,
   },
-  itemText: {
-    fontSize: 18,
-    fontWeight: '600',
+  nextBtn: {
+    backgroundColor: Colors.primary, borderRadius: BorderRadius.full,
+    height: 52, alignItems: 'center', justifyContent: 'center',
+    shadowColor: Colors.primary, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35, shadowRadius: 12, elevation: 6,
   },
-  buttonContainer: {
-    paddingVertical: 20,
-  },
-  button: {
-    height: 54,
-    borderRadius: 27,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  nextBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
 });

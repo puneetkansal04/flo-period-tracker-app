@@ -1,159 +1,262 @@
 import React, { useState } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, useColorScheme } from 'react-native';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
+import { Ionicons } from '@expo/vector-icons';
+
+const CheckBox = ({ checked, onPress }: { checked: boolean; onPress: () => void }) => (
+  <TouchableOpacity onPress={onPress} style={styles.checkbox}>
+    {checked ? (
+      <View style={styles.checkboxChecked}>
+        <Ionicons name="checkmark" size={14} color="#fff" />
+      </View>
+    ) : (
+      <View style={styles.checkboxUnchecked} />
+    )}
+  </TouchableOpacity>
+);
 
 export default function PrivacyScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  
-  const backgroundColor = isDark ? '#121212' : '#F9F9F9';
-  const cardBgColor = isDark ? '#1E1E1E' : '#FFFFFF';
-  const textColor = isDark ? '#FFFFFF' : '#333333';
-  const subTextColor = isDark ? '#AAAAAA' : '#666666';
-  const primaryColor = '#FF5A76';
-
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreeHealth, setAgreeHealth] = useState(false);
   const [agreeTracking, setAgreeTracking] = useState(false);
 
   const canProceed = agreeTerms && agreeHealth;
 
-  const handleNext = () => {
-    if (canProceed) {
-      router.push('/onboarding/birth-year');
-    }
-  };
-
-  const handleAcceptAll = () => {
+  const acceptAll = () => {
     setAgreeTerms(true);
     setAgreeHealth(true);
     setAgreeTracking(true);
-    // Auto proceed or let user click next? Let's just set state and let them click next or auto proceed.
-    // In target app, clicking "Accept all" enabled "Next". Let's do that.
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor }]}>
-      <ThemedView style={[styles.content, { backgroundColor }]}>
-        <ThemedText type="title" style={[styles.title, { color: textColor }]}>Privacy first</ThemedText>
-        
-        <ThemedView style={styles.optionsContainer}>
-          {/* Option 1 */}
-          <TouchableOpacity 
-            style={styles.optionRow} 
-            onPress={() => setAgreeTerms(!agreeTerms)}
-          >
-            <Ionicons 
-              name={agreeTerms ? "checkbox" : "square-outline"} 
-              size={24} 
-              color={agreeTerms ? primaryColor : subTextColor} 
-            />
-            <ThemedText style={[styles.optionText, { color: textColor }]}>
-              I agree to Privacy Policy and Terms of Use.
-            </ThemedText>
+    <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+      <ScrollView contentContainerStyle={styles.container} bounces={false}>
+        {/* Flo Logo */}
+        <View style={styles.logoContainer}>
+          <View style={styles.logoCircle}>
+            <Text style={styles.logoText}>flo</Text>
+          </View>
+        </View>
+
+        {/* Title */}
+        <Text style={styles.title}>Privacy first</Text>
+        <Text style={styles.subtitle}>
+          Flo is a safe space for you. Please read and accept these terms to continue.
+        </Text>
+
+        {/* Consent items */}
+        <View style={styles.consentList}>
+          <TouchableOpacity style={styles.consentRow} onPress={() => setAgreeTerms(!agreeTerms)} activeOpacity={0.7}>
+            <CheckBox checked={agreeTerms} onPress={() => setAgreeTerms(!agreeTerms)} />
+            <View style={styles.consentTextWrap}>
+              <Text style={styles.consentText}>
+                I agree to{' '}
+                <Text style={styles.link}>Privacy Policy</Text>
+                {' '}and{' '}
+                <Text style={styles.link}>Terms of Use</Text>.
+              </Text>
+              <Text style={styles.required}>Required</Text>
+            </View>
           </TouchableOpacity>
 
-          {/* Option 2 */}
-          <TouchableOpacity 
-            style={styles.optionRow} 
-            onPress={() => setAgreeHealth(!agreeHealth)}
-          >
-            <Ionicons 
-              name={agreeHealth ? "checkbox" : "square-outline"} 
-              size={24} 
-              color={agreeHealth ? primaryColor : subTextColor} 
-            />
-            <ThemedText style={[styles.optionText, { color: textColor }]}>
-              I agree to processing of my personal health data for providing me app functions.
-            </ThemedText>
+          <View style={styles.divider} />
+
+          <TouchableOpacity style={styles.consentRow} onPress={() => setAgreeHealth(!agreeHealth)} activeOpacity={0.7}>
+            <CheckBox checked={agreeHealth} onPress={() => setAgreeHealth(!agreeHealth)} />
+            <View style={styles.consentTextWrap}>
+              <Text style={styles.consentText}>
+                I agree to processing of my personal health data for providing me app functions.
+              </Text>
+              <Text style={styles.required}>Required</Text>
+            </View>
           </TouchableOpacity>
 
-          {/* Option 3 */}
-          <TouchableOpacity 
-            style={styles.optionRow} 
-            onPress={() => setAgreeTracking(!agreeTracking)}
-          >
-            <Ionicons 
-              name={agreeTracking ? "checkbox" : "square-outline"} 
-              size={24} 
-              color={agreeTracking ? primaryColor : subTextColor} 
-            />
-            <ThemedText style={[styles.optionText, { color: textColor }]}>
-              I agree to tracking my app activity to improve performance and promote services. (Optional)
-            </ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
+          <View style={styles.divider} />
 
-        <ThemedView style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={[styles.button, { backgroundColor: cardBgColor, borderWidth: 1, borderColor: primaryColor }]} 
-            onPress={handleAcceptAll}
-          >
-            <ThemedText style={[styles.buttonText, { color: primaryColor }]}>Accept all</ThemedText>
+          <TouchableOpacity style={styles.consentRow} onPress={() => setAgreeTracking(!agreeTracking)} activeOpacity={0.7}>
+            <CheckBox checked={agreeTracking} onPress={() => setAgreeTracking(!agreeTracking)} />
+            <View style={styles.consentTextWrap}>
+              <Text style={styles.consentText}>
+                I agree to tracking my app activity to improve performance and promote services.
+              </Text>
+              <Text style={styles.optional}>Optional</Text>
+            </View>
           </TouchableOpacity>
+        </View>
 
-          <TouchableOpacity 
-            style={[styles.button, { backgroundColor: canProceed ? primaryColor : subTextColor }]} 
-            onPress={handleNext}
-            disabled={!canProceed}
-          >
-            <ThemedText style={[styles.buttonText, { color: '#FFFFFF' }]}>Next</ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
-      </ThemedView>
-    </ScrollView>
+        {/* Accept All */}
+        <TouchableOpacity style={styles.acceptAllBtn} onPress={acceptAll} activeOpacity={0.8}>
+          <Text style={styles.acceptAllText}>Accept all</Text>
+        </TouchableOpacity>
+
+        {/* Next */}
+        <TouchableOpacity
+          style={[styles.nextBtn, !canProceed && styles.nextBtnDisabled]}
+          onPress={() => canProceed && router.push('/onboarding/goal')}
+          activeOpacity={canProceed ? 0.85 : 1}
+        >
+          <Text style={styles.nextBtnText}>Next</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.footer}>
+          Your data is encrypted and never sold to third parties.
+        </Text>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: Colors.white,
+  },
   container: {
-    flex: 1,
-    paddingTop: 60,
+    padding: Spacing.lg,
+    paddingBottom: Spacing['4xl'],
   },
-  content: {
-    paddingHorizontal: 20,
+  logoContainer: {
+    alignItems: 'center',
+    marginTop: Spacing['2xl'],
+    marginBottom: Spacing.xl,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 40,
-    textAlign: 'center',
-  },
-  optionsContainer: {
-    gap: 20,
-    marginBottom: 40,
-  },
-  optionRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 15,
-  },
-  optionText: {
-    fontSize: 16,
-    flex: 1,
-    lineHeight: 22,
-  },
-  buttonContainer: {
-    gap: 15,
-    marginBottom: 40,
-  },
-  button: {
-    height: 54,
-    borderRadius: 27,
+  logoCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  buttonText: {
+  logoText: {
+    color: Colors.white,
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: Spacing.md,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: Spacing['2xl'],
+    paddingHorizontal: Spacing.md,
+  },
+  consentList: {
+    backgroundColor: Colors.offWhite,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.xl,
+    overflow: 'hidden',
+  },
+  consentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: Spacing.base,
+    gap: Spacing.md,
+  },
+  checkbox: {
+    marginTop: 2,
+  },
+  checkboxChecked: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxUnchecked: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: Colors.borderDark,
+    backgroundColor: Colors.white,
+  },
+  consentTextWrap: {
+    flex: 1,
+  },
+  consentText: {
+    fontSize: 14,
+    color: Colors.textPrimary,
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  link: {
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  required: {
+    fontSize: 11,
+    color: Colors.primary,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  optional: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginHorizontal: Spacing.base,
+  },
+  acceptAllBtn: {
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    borderRadius: BorderRadius.full,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.md,
+  },
+  acceptAllText: {
+    color: Colors.primary,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
+  },
+  nextBtn: {
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.full,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
+    marginBottom: Spacing.xl,
+  },
+  nextBtnDisabled: {
+    backgroundColor: Colors.borderDark,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  nextBtnText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  footer: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });

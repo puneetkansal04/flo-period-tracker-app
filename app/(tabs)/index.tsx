@@ -1,215 +1,503 @@
-import React from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, useColorScheme, Dimensions } from 'react-native';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import React, { useEffect, useRef, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar, Animated, Dimensions } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
+import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
+import { registerForPushNotificationsAsync, scheduleCycleNotifications } from '@/utils/notifications';
 import { Ionicons } from '@expo/vector-icons';
-import { usePeriodTracker } from '@/hooks/usePeriodTracker';
 import moment from 'moment';
 
 const { width } = Dimensions.get('window');
+const CIRCLE_SIZE = width * 0.72;
 
-export default function HomeScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+function useCycleCalculations() {
+  const { lastPeriodDate, cycleLength, periodLength } = useSelector(
+    (state: RootState) => state.period
+  );
 
-  const { data, calculations } = usePeriodTracker();
-  const { currentDay, statusText, chancesOfPregnancy } = calculations;
-  
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  const daysUntilOvulation = Math.ceil((calculations.ovulationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  const predictionText = daysUntilOvulation > 0 ? `Ovulation in ${daysUntilOvulation} days` : "Ovulation today";
+  const lastPeriod = moment(lastPeriodDate).startOf('day');
+  const today = moment().startOf('day');
+  const daysPassed = today.diff(lastPeriod, 'days');
+  const currentDay = (daysPassed % cycleLength) + 1;
 
-  // Premium colors
-  // Serene Cycle Premium Colors
-  const primaryColor = '#f4a7b9'; // Soft pink
-  const secondaryColor = '#ad8b91'; // Tertiary Mauve
-  const backgroundColor = isDark ? '#121212' : '#faf9f6'; // Warm neutral
-  const cardBgColor = isDark ? '#1E1E1E' : '#ffffff'; // Pure white
-  const textColor = isDark ? '#ffffff' : '#2d2d2d'; // Charcoal
-  const subTextColor = isDark ? '#aaaaaa' : '#524346'; // Muted dark
+  // Next period
+  const cyclesSince = Math.floor(daysPassed / cycleLength);
+  const nextPeriodDate = lastPeriod.clone().add((cyclesSince + 1) * cycleLength, 'days');
+  const daysUntilPeriod = nextPeriodDate.diff(today, 'days');
+
+  // Ovulation (~14 days before next period)
+  const ovulationDate = nextPeriodDate.clone().subtract(14, 'days');
+  const daysUntilOvulation = ovulationDate.diff(today, 'days');
+
+  // Fertile window (ovulation - 5 to ovulation + 1)
+  const fertileStart = ovulationDate.clone().subtract(5, 'days');
+  const fertileEnd = ovulationDate.clone().add(1, 'day');
+  const isInPeriod = daysPassed % cycleLength < periodLength;
+  const isInFertile = today.isBetween(fertileStart, fertileEnd, 'day', '[]');
+  const isOvulationDay = today.isSame(ovulationDate, 'day');
+
+  let phase: 'period' | 'fertile' | 'ovulation' | 'follicular' | 'luteal';
+  let statusLabel: string;
+  let statusColor: string;
+  let circleColor: string;
+
+  if (isInPeriod) {
+    phase = 'period';
+    statusLabel = 'Period';
+    statusColor = Colors.primary;
+    circleColor = Colors.primary;
+  } else if (isOvulationDay) {
+    phase = 'ovulation';
+    statusLabel = 'Ovulation day';
+    statusColor = Colors.orange;
+    circleColor = Colors.orange;
+  } else if (isInFertile) {
+    phase = 'fertile';
+    statusLabel = 'High chance\nof pregnancy';
+    statusColor = Colors.green;
+    circleColor = Colors.green;
+  } else if (currentDay < cycleLength / 2) {
+    phase = 'follicular';
+    statusLabel = `${daysUntilPeriod} days\nuntil period`;
+    statusColor = Colors.blue;
+    circleColor = Colors.blue;
+  } else {
+    phase = 'luteal';
+    statusLabel = `${daysUntilPeriod} days\nuntil period`;
+    statusColor = Colors.purple;
+    circleColor = Colors.purple;
+  }
+
+  const progressFraction = currentDay / cycleLength;
+
+  return {
+    currentDay,
+    cycleLength,
+    daysUntilPeriod,
+    daysUntilOvulation,
+    ovulationDate,
+    nextPeriodDate,
+    phase,
+    statusLabel,
+    statusColor,
+    circleColor,
+    progressFraction,
+    isInFertile,
+    isOvulationDay,
+    isInPeriod,
+  };
+}
+
+function PulsingCircle({ color, progress }: { color: string; progress: number }) {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Pulse animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.04, duration: 1500, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
+      ])
+    ).start();
+
+    // Progress animation
+    Animated.timing(progressAnim, {
+      toValue: progress,
+      duration: 1000,
+      useNativeDriver: false,
+    }).start();
+  }, [progress]);
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor }]}>
-      {/* Header */}
-      <ThemedView style={[styles.header, { backgroundColor }]}>
-        <ThemedView style={styles.headerLeft}>
-          <ThemedText type="title" style={styles.title}>{moment().format('MMMM D')}</ThemedText>
-          <ThemedText style={[styles.subtitle, { color: subTextColor }]}>Cycle Day {currentDay}</ThemedText>
-        </ThemedView>
-        <TouchableOpacity style={styles.profileButton}>
-          <Ionicons name="person-circle-outline" size={32} color={primaryColor} />
-        </TouchableOpacity>
-      </ThemedView>
+    <Animated.View style={[styles.circleWrap, { transform: [{ scale: pulseAnim }] }]}>
+      <View style={[styles.circleOuter, { borderColor: color + '30' }]}>
+        <View style={[styles.circleInner, { borderColor: color + '15' }]}>
+          <View style={[styles.circleCore, { shadowColor: color }]} />
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
 
-      {/* Main Circular Status */}
-      <ThemedView style={[styles.statusContainer, { backgroundColor }]}>
-        <ThemedView style={[styles.outerCircle, { borderColor: isDark ? '#333' : primaryColor }]}>
-          <ThemedView style={[styles.innerCircle, { backgroundColor: cardBgColor }]}>
-            <ThemedText style={[styles.circleText, { color: primaryColor }]}>{statusText}</ThemedText>
-            <ThemedText style={[styles.circleSubText, { color: subTextColor }]}>{predictionText}</ThemedText>
-          </ThemedView>
-        </ThemedView>
-      </ThemedView>
+export default function TodayScreen() {
+  const router = useRouter();
+  const calcs = useCycleCalculations();
+  
+  useEffect(() => {
+    registerForPushNotificationsAsync().then(() => {
+      const daysUntilPeriod = calcs.nextPeriodDate.diff(moment(), 'days');
+      scheduleCycleNotifications(daysUntilPeriod);
+    });
+  }, []);
 
-      {/* Action Cards */}
-      <ThemedView style={[styles.actionsContainer, { backgroundColor }]}>
-        <TouchableOpacity style={[styles.card, { backgroundColor: cardBgColor }]}>
-          <ThemedView style={[styles.iconContainer, { backgroundColor: '#FFE5E9' }]}>
-            <Ionicons name="water" size={24} color={primaryColor} />
-          </ThemedView>
-          <ThemedView style={styles.cardTextContainer}>
-            <ThemedText type="subtitle" style={{ color: textColor }}>Log Symptoms</ThemedText>
-            <ThemedText style={{ color: subTextColor }}>Mood, flow, pain...</ThemedText>
-          </ThemedView>
-          <Ionicons name="chevron-forward" size={20} color={subTextColor} />
-        </TouchableOpacity>
+  const { dailyLogs } = useSelector((state: RootState) => state.period);
+  const today = moment().format('YYYY-MM-DD');
+  const todayLog = (dailyLogs || {})[today];
 
-        <TouchableOpacity style={[styles.card, { backgroundColor: cardBgColor }]}>
-          <ThemedView style={[styles.iconContainer, { backgroundColor: '#E8F0FE' }]}>
-            <Ionicons name="calendar" size={24} color="#1A73E8" />
-          </ThemedView>
-          <ThemedView style={styles.cardTextContainer}>
-            <ThemedText type="subtitle" style={{ color: textColor }}>Edit Period</ThemedText>
-            <ThemedText style={{ color: subTextColor }}>Adjust dates</ThemedText>
-          </ThemedView>
-          <Ionicons name="chevron-forward" size={20} color={subTextColor} />
-        </TouchableOpacity>
-      </ThemedView>
+  const articles = [
+    {
+      id: 1,
+      emoji: '🌺',
+      title: 'Understanding your cycle phases',
+      tag: 'Health',
+      readTime: '3 min',
+      color: '#FFF0F3',
+    },
+    {
+      id: 2,
+      emoji: '🧘',
+      title: 'Best exercises during your period',
+      tag: 'Fitness',
+      readTime: '5 min',
+      color: '#F0F3FF',
+    },
+    {
+      id: 3,
+      emoji: '🥗',
+      title: 'Foods that ease cramps naturally',
+      tag: 'Nutrition',
+      readTime: '4 min',
+      color: '#F0FFF4',
+    },
+  ];
 
-      {/* Insights Section */}
-      <ThemedView style={[styles.insightsContainer, { backgroundColor }]}>
-        <ThemedText type="subtitle" style={[styles.sectionTitle, { color: textColor }]}>Daily Insights</ThemedText>
-        <ThemedView style={[styles.insightCard, { backgroundColor: cardBgColor }]}>
-          <ThemedText style={[styles.insightTitle, { color: primaryColor }]}>Chances of getting pregnant</ThemedText>
-          <ThemedText style={[styles.insightValue, { color: textColor }]}>{chancesOfPregnancy}</ThemedText>
-          <ThemedText style={[styles.insightDescription, { color: subTextColor }]}>
-            Based on your cycle history, today is not a fertile day.
-          </ThemedText>
-        </ThemedView>
-      </ThemedView>
-    </ScrollView>
+  const { circleColor, statusLabel, currentDay, cycleLength, phase,
+    daysUntilPeriod, daysUntilOvulation, nextPeriodDate, ovulationDate, progressFraction } = calcs;
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
+
+      {/* Top Bar */}
+      <View style={styles.topBar}>
+        <View>
+          <Text style={styles.dateText}>{moment().format('MMMM D')}</Text>
+          <Text style={styles.cycleDay}>Cycle day {currentDay}</Text>
+        </View>
+        <View style={styles.topRight}>
+          <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/reminders')}>
+            <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.avatarBtn} onPress={() => router.push('/settings')}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>A</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+      >
+        {/* Main Circle */}
+        <View style={styles.circleSection}>
+          <View style={styles.circleContainer}>
+            {/* Outer glow ring */}
+            <View style={[styles.glowRing, { borderColor: circleColor + '25' }]} />
+            <View style={[styles.outerRing, { borderColor: circleColor + '50' }]}>
+              {/* Progress arc overlay */}
+              <View style={[styles.mainCircle, { shadowColor: circleColor }]}>
+                {/* Center content */}
+                <Text style={[styles.statusLabel, { color: circleColor }]}>{statusLabel}</Text>
+                <View style={[styles.phaseBadge, { backgroundColor: circleColor + '20' }]}>
+                  <View style={[styles.phaseDot, { backgroundColor: circleColor }]} />
+                  <Text style={[styles.phaseText, { color: circleColor }]}>
+                    {phase === 'period' ? 'Menstruation' :
+                     phase === 'fertile' ? 'Fertile window' :
+                     phase === 'ovulation' ? 'Ovulation' :
+                     phase === 'follicular' ? 'Follicular phase' : 'Luteal phase'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Log today button */}
+          <TouchableOpacity
+            style={[styles.logTodayBtn, { backgroundColor: circleColor }]}
+            onPress={() => router.push('/log-day')}
+            activeOpacity={0.85}
+          >
+            <Ionicons name={todayLog ? 'checkmark' : 'add'} size={18} color={Colors.white} />
+            <Text style={styles.logTodayText}>
+              {todayLog ? "Update today's log" : 'Log today'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Prediction Cards */}
+        <View style={styles.predictionRow}>
+          <View style={[styles.predictionCard, { backgroundColor: Colors.primary + '12' }]}>
+            <Ionicons name="water" size={20} color={Colors.primary} />
+            <Text style={styles.predCardLabel}>Next period</Text>
+            <Text style={[styles.predCardValue, { color: Colors.primary }]}>
+              {daysUntilPeriod === 0 ? 'Today' : `in ${daysUntilPeriod}d`}
+            </Text>
+            <Text style={styles.predCardDate}>{nextPeriodDate.format('MMM D')}</Text>
+          </View>
+
+          <View style={[styles.predictionCard, { backgroundColor: Colors.orange + '12' }]}>
+            <Ionicons name="sunny-outline" size={20} color={Colors.orange} />
+            <Text style={styles.predCardLabel}>Ovulation</Text>
+            <Text style={[styles.predCardValue, { color: Colors.orange }]}>
+              {daysUntilOvulation === 0 ? 'Today' :
+               daysUntilOvulation < 0 ? 'Passed' : `in ${daysUntilOvulation}d`}
+            </Text>
+            <Text style={styles.predCardDate}>{ovulationDate.format('MMM D')}</Text>
+          </View>
+
+          <View style={[styles.predictionCard, { backgroundColor: Colors.green + '12' }]}>
+            <Ionicons name="heart" size={20} color={Colors.green} />
+            <Text style={styles.predCardLabel}>Cycle day</Text>
+            <Text style={[styles.predCardValue, { color: Colors.green }]}>
+              {currentDay}
+            </Text>
+            <Text style={styles.predCardDate}>of {cycleLength}</Text>
+          </View>
+        </View>
+
+        {/* Today's Log Summary */}
+        {todayLog && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Today's log</Text>
+            <View style={styles.logSummaryCard}>
+              {todayLog.flow && (
+                <View style={styles.logTag}>
+                  <Text style={styles.logTagText}>💧 {todayLog.flow} flow</Text>
+                </View>
+              )}
+              {todayLog.moods?.map(m => (
+                <View key={m} style={styles.logTag}>
+                  <Text style={styles.logTagText}>😊 {m}</Text>
+                </View>
+              ))}
+              {todayLog.symptoms?.map(s => (
+                <View key={s} style={styles.logTag}>
+                  <Text style={styles.logTagText}>⚡ {s}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Daily Insights */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Daily insights</Text>
+            <TouchableOpacity onPress={() => router.push('/insights')}>
+              <Text style={styles.seeAll}>See all</Text>
+            </TouchableOpacity>
+          </View>
+
+          {articles.map((article) => (
+            <TouchableOpacity 
+              key={article.id} 
+              style={[styles.articleCard, { backgroundColor: article.color }]} 
+              activeOpacity={0.85}
+              onPress={() => router.push(`/article?title=${encodeURIComponent(article.title)}&category=${encodeURIComponent(article.tag)}&emoji=${article.emoji}`)}
+            >
+              <Text style={styles.articleEmoji}>{article.emoji}</Text>
+              <View style={styles.articleContent}>
+                <View style={styles.articleMeta}>
+                  <View style={styles.articleTag}>
+                    <Text style={styles.articleTagText}>{article.tag}</Text>
+                  </View>
+                  <Text style={styles.articleReadTime}>{article.readTime} read</Text>
+                </View>
+                <Text style={styles.articleTitle}>{article.title}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Fertility Banner */}
+        <View style={styles.section}>
+          <TouchableOpacity style={styles.fertilityBanner} activeOpacity={0.85} onPress={() => router.push('/paywall')}>
+            <View>
+              <Text style={styles.fertilityTitle}>Supercharge your health</Text>
+              <Text style={styles.fertilitySubtitle}>with Premium insights →</Text>
+            </View>
+            <Text style={styles.fertilityEmoji}>✨</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ height: 30 }} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 40,
-  },
-  header: {
+  safe: { flex: 1, backgroundColor: Colors.offWhite },
+  topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
-  headerLeft: {
-    flex: 1,
+  dateText: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
+  cycleDay: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+  topRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  notifBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  avatarBtn: {},
+  avatar: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+  avatarText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
+  scroll: { paddingBottom: Spacing['4xl'] },
+
+  // Circle
+  circleSection: {
+    backgroundColor: Colors.white,
+    paddingVertical: Spacing['2xl'],
+    alignItems: 'center',
+    marginBottom: Spacing.md,
   },
-  subtitle: {
-    fontSize: 16,
-    marginTop: 4,
-  },
-  profileButton: {
-    padding: 5,
-  },
-  statusContainer: {
+  circleContainer: {
+    width: CIRCLE_SIZE + 40,
+    height: CIRCLE_SIZE + 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 30,
+    marginBottom: Spacing.lg,
   },
-  outerCircle: {
-    width: width * 0.7,
-    height: width * 0.7,
-    borderRadius: (width * 0.7) / 2,
-    borderWidth: 8,
+  glowRing: {
+    position: 'absolute',
+    width: CIRCLE_SIZE + 40,
+    height: CIRCLE_SIZE + 40,
+    borderRadius: (CIRCLE_SIZE + 40) / 2,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+  },
+  outerRing: {
+    width: CIRCLE_SIZE + 16,
+    height: CIRCLE_SIZE + 16,
+    borderRadius: (CIRCLE_SIZE + 16) / 2,
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
   },
-  innerCircle: {
-    width: width * 0.62,
-    height: width * 0.62,
-    borderRadius: (width * 0.62) / 2,
+  mainCircle: {
+    width: CIRCLE_SIZE,
+    height: CIRCLE_SIZE,
+    borderRadius: CIRCLE_SIZE / 2,
+    backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    elevation: 12,
   },
-  circleText: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  circleWrap: {},
+  circleOuter: { borderWidth: 2 },
+  circleInner: { borderWidth: 1 },
+  circleCore: {},
+  statusLabel: {
+    fontSize: 22,
+    fontWeight: '700',
     textAlign: 'center',
+    lineHeight: 30,
+    marginBottom: Spacing.md,
   },
-  circleSubText: {
-    fontSize: 14,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  actionsContainer: {
-    paddingHorizontal: 20,
-    gap: 15,
-  },
-  card: {
+  phaseBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    gap: 6,
   },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+  phaseDot: { width: 8, height: 8, borderRadius: 4 },
+  phaseText: { fontSize: 13, fontWeight: '600' },
+  logTodayBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 15,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.full,
+    gap: Spacing.sm,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  cardTextContainer: {
+  logTodayText: { color: Colors.white, fontSize: 15, fontWeight: '600' },
+
+  // Prediction cards
+  predictionRow: {
+    flexDirection: 'row',
+    paddingHorizontal: Spacing.base,
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  predictionCard: {
     flex: 1,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    alignItems: 'center',
+    gap: 4,
   },
-  insightsContainer: {
-    paddingHorizontal: 20,
-    marginVertical: 30,
+  predCardLabel: { fontSize: 11, color: Colors.textSecondary, fontWeight: '500', marginTop: 2 },
+  predCardValue: { fontSize: 18, fontWeight: '700' },
+  predCardDate: { fontSize: 11, color: Colors.textMuted },
+
+  // Sections
+  section: { paddingHorizontal: Spacing.base, marginBottom: Spacing.md },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginBottom: Spacing.md },
+  seeAll: { fontSize: 14, color: Colors.primary, fontWeight: '600' },
+
+  // Log summary
+  logSummaryCard: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm,
+    backgroundColor: Colors.white, borderRadius: BorderRadius.lg, padding: Spacing.base,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
+  logTag: {
+    backgroundColor: Colors.primaryBg, borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.md, paddingVertical: 6,
   },
-  insightCard: {
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+  logTagText: { fontSize: 13, color: Colors.primary, fontWeight: '500' },
+
+  // Articles
+  articleCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.base,
+    marginBottom: Spacing.sm,
+    gap: Spacing.md,
   },
-  insightTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 5,
+  articleEmoji: { fontSize: 32 },
+  articleContent: { flex: 1 },
+  articleMeta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: 4 },
+  articleTag: {
+    backgroundColor: Colors.white + 'CC', borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.sm, paddingVertical: 2,
   },
-  insightValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
+  articleTagText: { fontSize: 11, fontWeight: '600', color: Colors.textSecondary },
+  articleReadTime: { fontSize: 11, color: Colors.textMuted },
+  articleTitle: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary, lineHeight: 20 },
+
+  // Fertility banner
+  fertilityBanner: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
   },
-  insightDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
+  fertilityTitle: { color: Colors.white, fontSize: 16, fontWeight: '700' },
+  fertilitySubtitle: { color: Colors.white + 'CC', fontSize: 13, marginTop: 2 },
+  fertilityEmoji: { fontSize: 32 },
 });
