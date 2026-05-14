@@ -8,8 +8,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import moment from 'moment';
 import { BarChart, LineChart } from 'react-native-chart-kit';
+import { MOODS, SYMPTOMS } from '@/constants/LogOptions';
 
 const screenWidth = Dimensions.get('window').width;
+
+const getLabel = (key: string) => {
+  const symptom = SYMPTOMS.find(s => s.key === key);
+  if (symptom) return symptom.label;
+  const mood = MOODS.find(m => m.key === key);
+  if (mood) return mood.label;
+  return key.charAt(0).toUpperCase() + key.slice(1).replace('_', ' ');
+};
 
 export default function InsightsScreen() {
   const router = useRouter();
@@ -162,7 +171,7 @@ export default function InsightsScreen() {
             <View style={styles.chartContainer}>
               <BarChart
                 data={{
-                  labels: [...topMoods.map(m => m[0].split('_')[1] || m[0]), ...topSymptoms.map(s => s[0].split('_')[1] || s[0])].slice(0, 4),
+                  labels: [...topMoods.map(m => getLabel(m[0])), ...topSymptoms.map(s => getLabel(s[0]))].slice(0, 4),
                   datasets: [
                     {
                       data: [...topMoods.map(m => m[1]), ...topSymptoms.map(s => s[1])].slice(0, 4)

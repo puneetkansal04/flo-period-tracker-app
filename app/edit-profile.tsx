@@ -6,16 +6,16 @@ import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store';
-import { setGoal } from '@/store/slices/periodSlice';
+import { setGoal, setName } from '@/store/slices/periodSlice';
 
 export default function EditProfileScreen() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const { birthYear, goal } = useSelector((s: RootState) => s.period);
-  
-  const [name, setName] = useState("Anonymous User");
+  const { birthYear, goal, name: savedName } = useSelector((s: RootState) => s.period);
+  const [name, setNameInput] = useState(savedName || "Anonymous User");
   
   const handleSave = () => {
+    dispatch(setName(name));
     router.back();
   };
 
@@ -44,7 +44,7 @@ export default function EditProfileScreen() {
         <Text style={styles.label}>Name</Text>
         <TextInput 
           value={name}
-          onChangeText={setName}
+          onChangeText={setNameInput}
           style={styles.input}
         />
 

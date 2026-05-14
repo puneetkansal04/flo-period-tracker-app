@@ -2,12 +2,15 @@ import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useDispatch } from 'react-redux';
+import { setPremium } from '@/store/slices/periodSlice';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function PaywallScreen() {
   const router = useRouter();
+  const dispatch = useDispatch();
 
   const features = [
     { icon: 'calendar', title: 'Advanced cycle predictions', subtitle: 'Know exactly when your period will start' },
@@ -72,7 +75,13 @@ export default function PaywallScreen() {
         </ScrollView>
 
         <View style={styles.footer}>
-          <TouchableOpacity style={styles.subscribeBtn} onPress={() => router.back()}>
+          <TouchableOpacity 
+            style={styles.subscribeBtn} 
+            onPress={() => {
+              dispatch(setPremium(true));
+              router.back();
+            }}
+          >
             <Text style={styles.subscribeText}>Continue</Text>
           </TouchableOpacity>
           <Text style={styles.termsText}>
