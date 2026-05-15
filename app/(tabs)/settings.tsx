@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar, Switch, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar, Switch, Alert, Linking } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store';
-import { setGoal, resetOnboarding, GoalType, setPregnant, setLockEnabled } from '@/store/slices/periodSlice';
+import { setGoal, resetOnboarding, GoalType, setPregnant, setLockEnabled, setSecretModeEnabled } from '@/store/slices/periodSlice';
 import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -41,7 +41,7 @@ const GOALS: { key: GoalType; label: string; emoji: string }[] = [
 export default function SettingsScreen() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const { goal, cycleLength, periodLength, birthYear, isPregnant, isLockEnabled } = useSelector((s: RootState) => s.period);
+  const { goal, cycleLength, periodLength, birthYear, isPregnant, isLockEnabled, isSecretModeEnabled } = useSelector((s: RootState) => s.period);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [remindersEnabled, setRemindersEnabled] = useState(true);
 
@@ -250,7 +250,7 @@ export default function SettingsScreen() {
               onPress={() => {
                 const pkg = "com.puneetkansal04.flo";
                 const url = `https://play.google.com/store/apps/details?id=${pkg}`;
-                require('react-native').Linking.openURL(url);
+                Linking.openURL(url);
               }}
             />
           </View>
