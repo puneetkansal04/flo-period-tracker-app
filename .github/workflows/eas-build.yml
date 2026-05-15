@@ -1,0 +1,45 @@
+name: Create Android Production Build
+on:
+  workflow_dispatch:
+    inputs:
+      submit:
+        description: 'Submit to Google Play'
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🏗 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🏗 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: 🏗 Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 📦 Install dependencies
+        run: npm install
+
+      - name: 🚀 Build AAB
+        id: build_aab
+        run: |
+          if [ "${{ github.event.inputs.submit }}" == "true" ]; then
+            eas build --platform android --profile production --non-interactive --auto-submit
+          else
+            eas build --platform android --profile production --non-interactive
+          fi
+
+      - name: 📥 Download AAB from EAS
+        # This step is a conceptual example. EAS CLI usually outputs the build URL.
+        # To get the actual file, we would need to wait for build and use 'eas build:list' or similar.
+        # However, EAS builds are stored in Expo Cloud.
+        run: echo "Build complete. View your builds at https://expo.dev/artifacts"
