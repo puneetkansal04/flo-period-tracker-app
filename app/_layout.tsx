@@ -9,7 +9,7 @@ import { RootState } from '@/store';
 import { useEffect } from 'react';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import * as SplashScreen from 'expo-splash-screen';
-import { registerForPushNotificationsAsync } from '@/utils/notifications';
+import { withIAPContext } from 'react-native-iap';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -43,7 +43,7 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-export default function RootLayout() {
+function RootLayoutContent() {
   const colorScheme = useColorScheme();
 
   useEffect(() => {
@@ -87,3 +87,6 @@ export default function RootLayout() {
     </Provider>
   );
 }
+
+export default withIAPContext(RootLayoutContent);
+

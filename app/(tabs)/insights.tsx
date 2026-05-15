@@ -33,6 +33,7 @@ export default function InsightsScreen() {
   } = useSelector(
     (s: RootState) => s.period
   );
+  const isPremium = useSelector((state: RootState) => state.period.isPremium);
 
   const today = moment().startOf('day');
   const lastPeriod = moment(lastPeriodDate || new Date()).startOf('day');
@@ -382,16 +383,18 @@ export default function InsightsScreen() {
         </View>
 
         {/* Premium Upsell */}
-        <View style={styles.premiumBanner}>
-          <Text style={styles.premiumEmoji}>✨</Text>
-          <View style={styles.premiumText}>
-            <Text style={styles.premiumTitle}>Unlock deeper insights</Text>
-            <Text style={styles.premiumSubtitle}>Hormonal trends, AI predictions & more</Text>
+        {!isPremium && (
+          <View style={styles.premiumBanner}>
+            <Text style={styles.premiumEmoji}>✨</Text>
+            <View style={styles.premiumText}>
+              <Text style={styles.premiumTitle}>Unlock deeper insights</Text>
+              <Text style={styles.premiumSubtitle}>Hormonal trends, AI predictions & more</Text>
+            </View>
+            <TouchableOpacity style={styles.premiumBtn} onPress={() => router.push('/paywall')}>
+              <Text style={styles.premiumBtnText}>Premium</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.premiumBtn} onPress={() => router.push('/paywall')}>
-            <Text style={styles.premiumBtnText}>Premium</Text>
-          </TouchableOpacity>
-        </View>
+        )}
 
         <View style={{ height: 80 }} />
       </ScrollView>

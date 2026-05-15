@@ -1,16 +1,80 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { useDispatch } from 'react-redux';
 import { setPremium } from '@/store/slices/periodSlice';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useIAP, requestSubscription, getSubscriptions, Subscription } from 'react-native-iap';
+
+const SUBSCRIPTION_ID = 'premium_subscription';
+const MONTHLY_BASE_PLAN = 'premium-monthly-plan';
+const ANNUAL_BASE_PLAN = 'premium-annual-plan';
 
 export default function PaywallScreen() {
   const router = useRouter();
   const dispatch = useDispatch();
+  const { connected, subscriptions, getSubscriptions, currentPurchase, finishTransaction, getAvailablePurchases } = useIAP();
+  
+  const [loading, setLoading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
+
+  useEffect(() => {
+    if (connected) {
+      getSubscriptions({ skus: [SUBSCRIPTION_ID] });
+    }
+  }, [connected]);
+
+  useEffect(() => {
+    const checkPurchase = async () => {
+      if (currentPurchase) {
+        try {
+          await finishTransaction({ purchase: currentPurchase, isConsumable: false });
+          dispatch(setPremium(true));
+          router.back();
+        } catch (error) {
+          console.error('Error finishing transaction', error);
+        }
+      }
+    };
+    checkPurchase();
+  }, [currentPurchase]);
+
+  const handleSubscribe = async () => {
+    setLoading(true);
+    try {
+      const selectedBasePlanId = selectedPlan === 'monthly' ? MONTHLY_BASE_PLAN : ANNUAL_BASE_PLAN;
+      const sub = subscriptions.find(s => s.productId === SUBSCRIPTION_ID);
+      
+      if (!sub) {
+        Alert.alert('Error', 'Subscription details not found. Please try again later.');
+        return;
+      }
+
+      const offer = sub.subscriptionOfferDetails?.find(o => o.basePlanId === selectedBasePlanId);
+      
+      if (!offer) {
+        Alert.alert('Error', 'Pricing plan not found in the store.');
+        return;
+      }
+
+      await requestSubscription({
+        sku: SUBSCRIPTION_ID,
+        subscriptionOffers: [{
+          productId: SUBSCRIPTION_ID,
+          basePlanId: selectedBasePlanId,
+        }]
+      });
+    } catch (err: any) {
+      if (err.code !== 'E_USER_CANCELLED') {
+        Alert.alert('Subscription Error', err.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const features = [
     { icon: 'calendar', title: 'Advanced cycle predictions', subtitle: 'Know exactly when your period will start' },
@@ -18,6 +82,10 @@ export default function PaywallScreen() {
     { icon: 'bar-chart', title: 'Symptom analysis', subtitle: 'Identify patterns in your cycle' },
     { icon: 'document-text', title: 'Personalized PDF reports', subtitle: 'Share your cycle data with your doctor' },
   ];
+
+  // Fallback prices if store is not loaded yet
+  const monthlyPrice = selectedPlan === 'monthly' ? '₹799' : '$9.99';
+  const annualPrice = selectedPlan === 'annual' ? '₹3,299' : '$39.99';
 
   return (
     <View style={styles.container}>
@@ -31,7 +99,22 @@ export default function PaywallScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
             <Ionicons name="close" size={24} color={Colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.restoreText}>Restore</Text>
+          <TouchableOpacity onPress={async () => {
+            try {
+              const purchases = await getAvailablePurchases();
+              if (purchases && purchases.length > 0) {
+                dispatch(setPremium(true));
+                Alert.alert('Success', 'Your premium subscription has been restored.');
+                router.back();
+              } else {
+                Alert.alert('Info', 'No active subscriptions found to restore.');
+              }
+            } catch (err) {
+              Alert.alert('Error', 'Failed to restore purchases.');
+            }
+          }}>
+            <Text style={styles.restoreText}>Restore</Text>
+          </TouchableOpacity>
         </View>
 
         <ScrollView contentContainerStyle={styles.scroll}>
@@ -58,19 +141,25 @@ export default function PaywallScreen() {
           </View>
 
           <View style={styles.pricingSection}>
-            <TouchableOpacity style={[styles.pricingCard, styles.pricingCardActive]}>
+            <TouchableOpacity 
+              style={[styles.pricingCard, selectedPlan === 'annual' && styles.pricingCardActive]}
+              onPress={() => setSelectedPlan('annual')}
+            >
               <View style={styles.bestValueBadge}>
                 <Text style={styles.bestValueText}>Best Value</Text>
               </View>
               <Text style={styles.planName}>Annual Plan</Text>
-              <Text style={styles.planPrice}>$39.99 / year</Text>
-              <Text style={styles.planDesc}>Just $3.33/month. Cancel anytime.</Text>
+              <Text style={styles.planPrice}>₹3,299 / year</Text>
+              <Text style={styles.planDesc}>Just ₹275/month. Cancel anytime.</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.pricingCard}>
+            <TouchableOpacity 
+              style={[styles.pricingCard, selectedPlan === 'monthly' && styles.pricingCardActive]}
+              onPress={() => setSelectedPlan('monthly')}
+            >
               <Text style={styles.planName}>Monthly Plan</Text>
-              <Text style={styles.planPrice}>$9.99 / month</Text>
-              <Text style={styles.planDesc}>Cancel anytime.</Text>
+              <Text style={styles.planPrice}>₹799 / month</Text>
+              <Text style={styles.planDesc}>Flexible. Cancel anytime.</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -78,12 +167,14 @@ export default function PaywallScreen() {
         <View style={styles.footer}>
           <TouchableOpacity 
             style={styles.subscribeBtn} 
-            onPress={() => {
-              dispatch(setPremium(true));
-              router.back();
-            }}
+            onPress={handleSubscribe}
+            disabled={loading}
           >
-            <Text style={styles.subscribeText}>Continue</Text>
+            {loading ? (
+              <ActivityIndicator color={Colors.white} />
+            ) : (
+              <Text style={styles.subscribeText}>Continue</Text>
+            )}
           </TouchableOpacity>
           <Text style={styles.termsText}>
             By continuing, you agree to our Terms of Use and Privacy Policy. Subscription automatically renews unless auto-renew is turned off at least 24-hours before the end of the current period.
@@ -150,3 +241,4 @@ const styles = StyleSheet.create({
   subscribeText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
   termsText: { fontSize: 10, color: Colors.textMuted, textAlign: 'center', lineHeight: 14 },
 });
+

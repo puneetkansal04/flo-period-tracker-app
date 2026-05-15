@@ -34,7 +34,7 @@ export default function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
   
   const period = useSelector((s: RootState) => s.period);
-  const { lastPeriodDate, cycleLength = 28, periodLength = 5, dailyLogs = {}, calendarSettings } = period || {};
+  const { lastPeriodDate, cycleLength = 28, periodLength = 5, dailyLogs = {}, calendarSettings, isPremium } = period || {};
   const safeSettings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...calendarSettings }), [calendarSettings]);
 
   const days = useMemo(() => {
@@ -102,10 +102,12 @@ export default function CalendarScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Calendar</Text>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.premiumBadge} onPress={() => router.push('/paywall')}>
-            <Ionicons name="sparkles" size={14} color={Colors.white} />
-            <Text style={styles.premiumText}>UPGRADE</Text>
-          </TouchableOpacity>
+          {!isPremium && (
+            <TouchableOpacity style={styles.premiumBadge} onPress={() => router.push('/paywall')}>
+              <Ionicons name="sparkles" size={14} color={Colors.white} />
+              <Text style={styles.premiumText}>UPGRADE</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity onPress={() => router.push('/calendar-settings')} style={styles.settingsBtn}>
             <Ionicons name="settings-outline" size={22} color={Colors.textPrimary} />
           </TouchableOpacity>
