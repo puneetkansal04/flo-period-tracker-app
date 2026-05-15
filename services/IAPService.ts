@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import * as RNIap from 'react-native-iap';
-import { requestSubscription as requestIapSubscriptionNative } from 'react-native-iap';
+
 
 export const SKU = {
   PREMIUM: 'premium_subscription',
@@ -78,7 +78,7 @@ export const IAPService = {
 
   requestSubscription: async (sku: string, basePlanId: string) => {
     try {
-      return await requestIapSubscriptionNative({
+      return await RNIap.requestSubscription({
         sku,
         subscriptionOffers: [{
           productId: sku,

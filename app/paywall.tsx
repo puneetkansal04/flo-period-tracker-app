@@ -7,8 +7,9 @@ import { setPremium } from '@/store/slices/periodSlice';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Subscription } from 'react-native-iap';
+import { Subscription, useIAP } from 'react-native-iap';
 import { IAPService, SKU, BASE_PLANS } from '@/services/IAPService';
+import { CustomAlert } from '@/components/CustomAlert';
 
 
 
@@ -16,26 +17,46 @@ export default function PaywallScreen() {
   const router = useRouter();
   const dispatch = useDispatch();
   
+  const { connected, requestPurchase, getSubscriptions, subscriptions: iapSubscriptions } = useIAP();
+  
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+
+  const showAlert = (title: string, message: string) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertVisible(true);
+  };
 
   useEffect(() => {
-    const fetchSubs = async () => {
-      const subs = await IAPService.getSubscriptions();
-      setSubscriptions(subs);
-    };
-    fetchSubs();
-  }, []);
+    if (connected) {
+      try {
+        getSubscriptions({ skus: [SKU.PREMIUM] });
+      } catch (err: any) {
+        console.warn('getSubscriptions error:', err.message);
+      }
+    }
+  }, [connected, getSubscriptions]);
 
   const handleSubscribe = async () => {
     setLoading(true);
     try {
       const selectedBasePlanId = selectedPlan === 'monthly' ? BASE_PLANS.MONTHLY : BASE_PLANS.ANNUAL;
-      await IAPService.requestSubscription(SKU.PREMIUM, selectedBasePlanId);
+      
+      await requestPurchase({
+        sku: SKU.PREMIUM,
+        subscriptionOffers: [{
+          productId: SKU.PREMIUM,
+          basePlanId: selectedBasePlanId,
+        }]
+      });
     } catch (err: any) {
       if (err.code !== 'E_USER_CANCELLED') {
-        Alert.alert('Subscription Error', err.message);
+        showAlert('Subscription Error', err.message);
       }
     } finally {
       setLoading(false);
@@ -70,13 +91,13 @@ export default function PaywallScreen() {
               const purchases = await IAPService.restorePurchases();
               if (purchases && purchases.length > 0) {
                 dispatch(setPremium(true));
-                Alert.alert('Success', 'Your premium subscription has been restored.');
+                showAlert('Success', 'Your premium subscription has been restored.');
                 router.back();
               } else {
-                Alert.alert('Info', 'No active subscriptions found to restore.');
+                showAlert('Info', 'No active subscriptions found to restore.');
               }
             } catch (err) {
-              Alert.alert('Error', 'Failed to restore purchases.');
+              showAlert('Error', 'Failed to restore purchases.');
             }
           }}>
             <Text style={styles.restoreText}>Restore</Text>
@@ -145,7 +166,12 @@ export default function PaywallScreen() {
           <Text style={styles.termsText}>
             By continuing, you agree to our Terms of Use and Privacy Policy. Subscription automatically renews unless auto-renew is turned off at least 24-hours before the end of the current period.
           </Text>
-        </View>
+        <CustomAlert
+          visible={alertVisible}
+          title={alertTitle}
+          message={alertMessage}
+          onClose={() => setAlertVisible(false)}
+        />
       </SafeAreaView>
     </View>
   );

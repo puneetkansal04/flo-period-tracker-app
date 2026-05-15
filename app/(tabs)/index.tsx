@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, StatusBar } from 'react-native';
 import { useSelector } from 'react-redux';
@@ -21,6 +21,12 @@ export default function HomeScreen() {
     pregnancyChance,
     statusMessage 
   } = usePeriodTracker();
+
+  useEffect(() => {
+    if (!isPremium) {
+      router.push('/paywall');
+    }
+  }, [isPremium]);
 
   const getTip = () => {
     switch (phase) {
