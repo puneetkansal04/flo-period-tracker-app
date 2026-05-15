@@ -7,66 +7,32 @@ import { setPremium } from '@/store/slices/periodSlice';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useIAP, requestSubscription, getSubscriptions, Subscription } from 'react-native-iap';
+import { Subscription } from 'react-native-iap';
+import { IAPService, SKU, BASE_PLANS } from '@/services/IAPService';
 
-const SUBSCRIPTION_ID = 'premium_subscription';
-const MONTHLY_BASE_PLAN = 'premium-monthly-plan';
-const ANNUAL_BASE_PLAN = 'premium-annual-plan';
+
 
 export default function PaywallScreen() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const { connected, subscriptions, getSubscriptions, currentPurchase, finishTransaction, getAvailablePurchases } = useIAP();
   
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
 
   useEffect(() => {
-    if (connected) {
-      getSubscriptions({ skus: [SUBSCRIPTION_ID] });
-    }
-  }, [connected]);
-
-  useEffect(() => {
-    const checkPurchase = async () => {
-      if (currentPurchase) {
-        try {
-          await finishTransaction({ purchase: currentPurchase, isConsumable: false });
-          dispatch(setPremium(true));
-          router.back();
-        } catch (error) {
-          console.error('Error finishing transaction', error);
-        }
-      }
+    const fetchSubs = async () => {
+      const subs = await IAPService.getSubscriptions();
+      setSubscriptions(subs);
     };
-    checkPurchase();
-  }, [currentPurchase]);
+    fetchSubs();
+  }, []);
 
   const handleSubscribe = async () => {
     setLoading(true);
     try {
-      const selectedBasePlanId = selectedPlan === 'monthly' ? MONTHLY_BASE_PLAN : ANNUAL_BASE_PLAN;
-      const sub = subscriptions.find(s => s.productId === SUBSCRIPTION_ID);
-      
-      if (!sub) {
-        Alert.alert('Error', 'Subscription details not found. Please try again later.');
-        return;
-      }
-
-      const offer = sub.subscriptionOfferDetails?.find(o => o.basePlanId === selectedBasePlanId);
-      
-      if (!offer) {
-        Alert.alert('Error', 'Pricing plan not found in the store.');
-        return;
-      }
-
-      await requestSubscription({
-        sku: SUBSCRIPTION_ID,
-        subscriptionOffers: [{
-          productId: SUBSCRIPTION_ID,
-          basePlanId: selectedBasePlanId,
-        }]
-      });
+      const selectedBasePlanId = selectedPlan === 'monthly' ? BASE_PLANS.MONTHLY : BASE_PLANS.ANNUAL;
+      await IAPService.requestSubscription(SKU.PREMIUM, selectedBasePlanId);
     } catch (err: any) {
       if (err.code !== 'E_USER_CANCELLED') {
         Alert.alert('Subscription Error', err.message);
@@ -101,7 +67,7 @@ export default function PaywallScreen() {
           </TouchableOpacity>
           <TouchableOpacity onPress={async () => {
             try {
-              const purchases = await getAvailablePurchases();
+              const purchases = await IAPService.restorePurchases();
               if (purchases && purchases.length > 0) {
                 dispatch(setPremium(true));
                 Alert.alert('Success', 'Your premium subscription has been restored.');

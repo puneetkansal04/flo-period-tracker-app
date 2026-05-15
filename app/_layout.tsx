@@ -9,7 +9,7 @@ import { RootState } from '@/store';
 import { useEffect } from 'react';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import * as SplashScreen from 'expo-splash-screen';
-import { withIAPContext } from 'react-native-iap';
+
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -43,8 +43,29 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
+import { IAPService } from '@/services/IAPService';
+import { setPremium } from '@/store/slices/periodSlice';
+
 function RootLayoutContent() {
   const colorScheme = useColorScheme();
+  const dispatch = store.dispatch;
+
+  useEffect(() => {
+    // Initialize IAP
+    IAPService.init(
+      (purchase) => {
+        console.log('[App] Purchase Success:', purchase);
+        dispatch(setPremium(true));
+      },
+      (error) => {
+        console.warn('[App] Purchase Error:', error);
+      }
+    );
+
+    return () => {
+      IAPService.end();
+    };
+  }, []);
 
   useEffect(() => {
     // Hide the splash screen after the app is ready.
@@ -88,5 +109,7 @@ function RootLayoutContent() {
   );
 }
 
-export default withIAPContext(RootLayoutContent);
+export default function RootLayout() {
+  return <RootLayoutContent />;
+}
 
