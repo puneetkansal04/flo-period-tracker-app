@@ -14,6 +14,12 @@ jobs:
       - name: 🏗 Checkout
         uses: actions/checkout@v4
 
+      - name: 🏗 Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
       - name: 🏗 Setup Node
         uses: actions/setup-node@v4
         with:
@@ -30,17 +36,15 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci
 
-      - name: 🚀 Build AAB
-        id: build_aab
+      - name: 🚀 Build AAB Local
         run: |
-          if [ "${{ github.event.inputs.submit }}" == "true" ]; then
-            eas build --platform android --profile production --non-interactive --auto-submit
-          else
-            eas build --platform android --profile production --non-interactive
-          fi
+          # We use --local to avoid EAS Cloud limits. 
+          # Note: This requires credentials to be configured in GitHub Secrets or available via eas.json/credentials.json
+          eas build --platform android --profile production --local --non-interactive --output=app-release.aab
 
-      - name: 📥 Download AAB from EAS
-        # This step is a conceptual example. EAS CLI usually outputs the build URL.
-        # To get the actual file, we would need to wait for build and use 'eas build:list' or similar.
-        # However, EAS builds are stored in Expo Cloud.
-        run: echo "Build complete. View your builds at https://expo.dev/artifacts"
+      - name: 📦 Upload AAB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-aab
+          path: app-release.aab
+          retention-days: 7
