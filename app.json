@@ -19,7 +19,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.puneetkansal04.flo",
+      "package": "com.serene.cycle.tracker",
       "versionCode": 1
     },
     "web": {
