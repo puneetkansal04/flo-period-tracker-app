@@ -37,9 +37,10 @@ jobs:
         run: npm ci
 
       - name: 🚀 Build AAB Local
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
         run: |
           # We use --local to avoid EAS Cloud limits. 
-          # Note: This requires credentials to be configured in GitHub Secrets or available via eas.json/credentials.json
           eas build --platform android --profile production --local --non-interactive --output=app-release.aab
 
       - name: 📦 Upload AAB Artifact
