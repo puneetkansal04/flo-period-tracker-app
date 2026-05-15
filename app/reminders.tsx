@@ -1,151 +1,206 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Switch, Modal, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Switch, Modal, Platform, StatusBar } from 'react-native';
+import { useRouter, Stack } from 'expo-router';
 import { Colors, BorderRadius, Spacing, Shadows } from '@/constants/FloColors';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Notifications from 'expo-notifications';
 import moment from 'moment';
 
-interface CustomReminder {
+interface Alarm {
   id: string;
   title: string;
-  time: Date;
+  time: string; // "09:00"
   enabled: boolean;
-  days: string[]; // ['Mon', 'Tue', ...]
+  type: 'water' | 'pill' | 'exercise' | 'custom';
 }
 
-export default function RemindersScreen() {
-  const router = useRouter();
-  const [reminders, setReminders] = useState<CustomReminder[]>([
-    { id: '1', title: 'Drink Water', time: new Date(new Date().setHours(9, 0, 0)), enabled: true, days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] },
-    { id: '2', title: 'Birth Control Pill', time: new Date(new Date().setHours(21, 0, 0)), enabled: true, days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] },
-  ]);
+const DEFAULT_ALARMS: Alarm[] = [
+  { id: '1', title: 'Morning Water', time: '08:00', enabled: true, type: 'water' },
+  { id: '2', title: 'Take Pill', time: '09:00', enabled: true, type: 'pill' },
+  { id: '3', title: 'Lunch Walk', time: '13:30', enabled: false, type: 'exercise' },
+  { id: '4', title: 'Evening Hydration', time: '18:00', enabled: true, type: 'water' },
+];
 
+export default function AlarmsScreen() {
+  const router = useRouter();
+  const [alarms, setAlarms] = useState<Alarm[]>(DEFAULT_ALARMS);
   const [modalVisible, setModalVisible] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newTime, setNewTime] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
 
-  const addReminder = async () => {
-    if (!newTitle) return;
-    const nr: CustomReminder = {
-      id: Date.now().toString(),
-      title: newTitle,
-      time: newTime,
-      enabled: true,
-      days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    };
-    setReminders([...reminders, nr]);
-    setModalVisible(false);
-    setNewTitle('');
-
-    // Schedule notification
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: nr.title,
-        body: "It's time! Don't forget your task.",
-        sound: true,
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
-        hour: nr.time.getHours(),
-        minute: nr.time.getMinutes(),
-        repeats: true,
-      },
+  const toggleAlarm = async (id: string) => {
+    const updated = alarms.map(a => {
+      if (a.id === id) {
+        const nextState = !a.enabled;
+        if (nextState) scheduleNotification(a);
+        else cancelNotification(a.id);
+        return { ...a, enabled: nextState };
+      }
+      return a;
     });
+    setAlarms(updated);
   };
 
-  const toggleReminder = (id: string) => {
-    setReminders(reminders.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r));
+  const scheduleNotification = async (alarm: Alarm) => {
+    const [hours, minutes] = alarm.time.split(':').map(Number);
+    try {
+      await Notifications.scheduleNotificationAsync({
+        identifier: alarm.id,
+        content: {
+          title: alarm.title,
+          body: `It's ${alarm.time}! Don't forget your task.`,
+          sound: true,
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+          hour: hours,
+          minute: minutes,
+          repeats: true,
+        },
+      });
+    } catch (e) {
+      console.warn("Failed to schedule:", e);
+    }
+  };
+
+  const cancelNotification = async (id: string) => {
+    await Notifications.cancelScheduledNotificationAsync(id);
+  };
+
+  const addAlarm = () => {
+    if (!newTitle) return;
+    const timeStr = moment(newTime).format('HH:mm');
+    const newAlarm: Alarm = {
+      id: Date.now().toString(),
+      title: newTitle,
+      time: timeStr,
+      enabled: true,
+      type: 'custom',
+    };
+    setAlarms([...alarms, newAlarm]);
+    scheduleNotification(newAlarm);
+    setModalVisible(false);
+    setNewTitle('');
+  };
+
+  const getIcon = (type: Alarm['type']) => {
+    switch (type) {
+      case 'water': return { name: 'water', color: '#3B82F6' };
+      case 'pill': return { name: 'medical', color: Colors.primary };
+      case 'exercise': return { name: 'walk', color: '#10B981' };
+      default: return { name: 'notifications', color: Colors.orange };
+    }
   };
 
   return (
     <SafeAreaView style={styles.safe}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Reminders & Plans</Text>
+        <Text style={styles.headerTitle}>Daily Alarms</Text>
         <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.addBtn}>
-          <Ionicons name="add" size={24} color={Colors.primary} />
+          <Ionicons name="add" size={28} color={Colors.primary} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.sectionTitle}>Your Daily Plan</Text>
-        {reminders.map(r => (
-          <View key={r.id} style={styles.reminderCard}>
-            <View style={styles.reminderInfo}>
-              <Text style={styles.reminderTitle}>{r.title}</Text>
-              <Text style={styles.reminderTime}>{moment(r.time).format('hh:mm A')}</Text>
-              <Text style={styles.reminderDays}>{r.days.join(', ')}</Text>
-            </View>
-            <Switch
-              value={r.enabled}
-              onValueChange={() => toggleReminder(r.id)}
-              trackColor={{ false: Colors.lightGray, true: Colors.primary + '80' }}
-              thumbColor={r.enabled ? Colors.primary : Colors.borderDark}
-            />
-          </View>
-        ))}
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.infoBox}>
+          <Ionicons name="alarm-outline" size={24} color={Colors.primary} />
+          <Text style={styles.infoText}>Stay on track with your routine. Alarms help you maintain healthy habits throughout your cycle.</Text>
+        </View>
 
-        <TouchableOpacity style={styles.suggestedCard} onPress={() => {
-          setNewTitle('Walk 10,000 steps');
-          setModalVisible(true);
-        }}>
-          <View style={styles.suggestedIcon}>
-            <Ionicons name="walk" size={24} color={Colors.orange} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.suggestedTitle}>Add Exercise Goal</Text>
-            <Text style={styles.suggestedSub}>Stay active during your cycle</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
+        <Text style={styles.sectionLabel}>Your Schedule</Text>
+        {alarms.sort((a,b) => a.time.localeCompare(b.time)).map(alarm => {
+          const icon = getIcon(alarm.type);
+          return (
+            <View key={alarm.id} style={[styles.alarmCard, !alarm.enabled && styles.alarmCardDisabled]}>
+              <View style={[styles.iconCircle, { backgroundColor: icon.color + '15' }]}>
+                <Ionicons name={icon.name as any} size={22} color={icon.color} />
+              </View>
+              <View style={styles.alarmInfo}>
+                <Text style={[styles.alarmTime, !alarm.enabled && styles.textDisabled]}>
+                  {moment(alarm.time, 'HH:mm').format('hh:mm A')}
+                </Text>
+                <Text style={[styles.alarmTitle, !alarm.enabled && styles.textDisabled]}>{alarm.title}</Text>
+              </View>
+              <Switch
+                value={alarm.enabled}
+                onValueChange={() => toggleAlarm(alarm.id)}
+                trackColor={{ false: Colors.border, true: Colors.primary + '80' }}
+                thumbColor={alarm.enabled ? Colors.primary : Colors.borderDark}
+              />
+            </View>
+          );
+        })}
+
+        <TouchableOpacity 
+          style={styles.quickAddBtn} 
+          onPress={() => {
+            setNewTitle('Hydration Check');
+            setModalVisible(true);
+          }}
+        >
+          <Ionicons name="flash-outline" size={20} color={Colors.white} />
+          <Text style={styles.quickAddText}>Quick Add Alarm</Text>
         </TouchableOpacity>
       </ScrollView>
 
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>New Reminder</Text>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Set Alarm</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Ionicons name="close" size={24} color={Colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={styles.inputLabel}>Task Name</Text>
             <TextInput
               style={styles.input}
-              placeholder="What should we remind you about?"
+              placeholder="e.g., Morning Yoga"
               value={newTitle}
               onChangeText={setNewTitle}
               placeholderTextColor={Colors.textMuted}
             />
             
+            <Text style={styles.inputLabel}>Reminder Time</Text>
             <TouchableOpacity 
               style={styles.timeSelector} 
               onPress={() => setShowTimePicker(true)}
             >
-              <Text style={styles.timeSelectorLabel}>Time</Text>
+              <Ionicons name="time-outline" size={20} color={Colors.primary} />
               <Text style={styles.timeSelectorValue}>{moment(newTime).format('hh:mm A')}</Text>
             </TouchableOpacity>
 
-            {showTimePicker && (
-              <DateTimePicker
-                value={newTime}
-                mode="time"
-                is24Hour={false}
-                onChange={(event, date) => {
-                  setShowTimePicker(Platform.OS === 'ios');
-                  if (date) setNewTime(date);
-                }}
-              />
-            )}
+            {showTimePicker && (() => {
+              try {
+                const DateTimePicker = require('@react-native-community/datetimepicker').default;
+                return (
+                  <DateTimePicker
+                    value={newTime}
+                    mode="time"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    is24Hour={false}
+                    onChange={(event, date) => {
+                      setShowTimePicker(Platform.OS === 'ios');
+                      if (date) setNewTime(date);
+                    }}
+                  />
+                );
+              } catch (e) {
+                return <Text style={styles.errorText}>Time picker unavailable. Using current time.</Text>;
+              }
+            })()}
 
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.saveBtn} onPress={addReminder}>
-                <Text style={styles.saveBtnText}>Save Reminder</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={styles.saveBtn} onPress={addAlarm}>
+              <Text style={styles.saveBtnText}>Activate Alarm</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -154,52 +209,57 @@ export default function RemindersScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.offWhite },
+  safe: { flex: 1, backgroundColor: Colors.white },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: Spacing.base, paddingVertical: Spacing.md,
-    backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border,
+    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
   backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   addBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
-  scroll: { padding: Spacing.base },
-  sectionTitle: { fontSize: 13, fontWeight: '700', color: Colors.textSecondary, textTransform: 'uppercase', marginBottom: Spacing.lg, letterSpacing: 0.5 },
-  reminderCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white,
+  headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
+  scroll: { padding: Spacing.lg },
+  infoBox: {
+    backgroundColor: Colors.primaryBg, padding: Spacing.lg,
+    borderRadius: BorderRadius.xl, flexDirection: 'row', gap: 12, marginBottom: Spacing.xl,
+  },
+  infoText: { flex: 1, fontSize: 13, color: Colors.primary, lineHeight: 18, fontWeight: '500' },
+  sectionLabel: { fontSize: 12, fontWeight: '800', color: Colors.textMuted, textTransform: 'uppercase', marginBottom: Spacing.md, letterSpacing: 1 },
+  alarmCard: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.offWhite,
     padding: Spacing.lg, borderRadius: BorderRadius.xl, marginBottom: Spacing.md,
     ...Shadows.card,
   },
-  reminderInfo: { flex: 1 },
-  reminderTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 2 },
-  reminderTime: { fontSize: 20, fontWeight: '800', color: Colors.primary, marginBottom: 4 },
-  reminderDays: { fontSize: 12, color: Colors.textMuted },
-  suggestedCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF7ED',
-    padding: Spacing.lg, borderRadius: BorderRadius.xl, marginTop: Spacing.xl,
-    gap: Spacing.md,
+  alarmCardDisabled: { opacity: 0.6 },
+  iconCircle: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginRight: Spacing.md },
+  alarmInfo: { flex: 1 },
+  alarmTime: { fontSize: 24, fontWeight: '800', color: Colors.textPrimary },
+  alarmTitle: { fontSize: 14, color: Colors.textSecondary, fontWeight: '500', marginTop: 2 },
+  textDisabled: { color: Colors.textMuted },
+  quickAddBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.primary, paddingVertical: 16, borderRadius: BorderRadius.full,
+    marginTop: Spacing.lg, gap: 8, ...Shadows.button,
   },
-  suggestedIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.white, alignItems: 'center', justifyContent: 'center' },
-  suggestedTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
-  suggestedSub: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  quickAddText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: Colors.white, borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: Spacing.xl, paddingBottom: 50 },
-  modalTitle: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary, marginBottom: Spacing.xl, textAlign: 'center' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.xl },
+  modalTitle: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary },
+  inputLabel: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 8, marginLeft: 4 },
   input: {
     backgroundColor: Colors.offWhite, borderRadius: BorderRadius.lg,
     padding: Spacing.lg, fontSize: 16, color: Colors.textPrimary,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl, borderWidth: 1, borderColor: Colors.border,
   },
   timeSelector: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: Colors.offWhite, borderRadius: BorderRadius.lg,
-    padding: Spacing.lg, marginBottom: Spacing['2xl'],
+    padding: Spacing.lg, marginBottom: Spacing.xl,
+    borderWidth: 1, borderColor: Colors.border,
   },
-  timeSelectorLabel: { fontSize: 16, fontWeight: '600', color: Colors.textPrimary },
-  timeSelectorValue: { fontSize: 16, fontWeight: '700', color: Colors.primary },
-  modalActions: { flexDirection: 'row', gap: Spacing.md },
-  cancelBtn: { flex: 1, paddingVertical: 16, alignItems: 'center' },
-  cancelBtnText: { fontSize: 16, fontWeight: '600', color: Colors.textMuted },
-  saveBtn: { flex: 2, backgroundColor: Colors.primary, paddingVertical: 16, borderRadius: BorderRadius.full, alignItems: 'center' },
+  timeSelectorValue: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
+  saveBtn: { backgroundColor: Colors.primary, paddingVertical: 16, borderRadius: BorderRadius.full, alignItems: 'center', marginTop: Spacing.md },
   saveBtnText: { fontSize: 16, fontWeight: '700', color: Colors.white },
+  errorText: { color: 'red', textAlign: 'center', marginVertical: 10, fontSize: 12 },
 });

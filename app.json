@@ -42,7 +42,8 @@
           }
         }
       ],
-      "react-native-iap"
+      "react-native-iap",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

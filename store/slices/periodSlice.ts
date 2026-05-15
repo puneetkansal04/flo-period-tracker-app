@@ -51,6 +51,8 @@ export interface PeriodState {
   // Plan
   isPremium: boolean;
   isPregnant: boolean;
+  isSecretModeEnabled: boolean;
+  isSessionUnlocked: boolean;
   calendarSettings: {
     showOvulation: boolean;
     showFertile: boolean;
@@ -65,6 +67,10 @@ export interface PeriodState {
   // Rating
   hasRated: boolean;
   lastRatingPromptDate: string | null; // ISO string
+  
+  // Privacy
+  isLockEnabled: boolean;
+  pin: string | null;
 }
 
 const initialState: PeriodState = {
@@ -94,6 +100,8 @@ const initialState: PeriodState = {
   email: null,
   isPremium: false,
   isPregnant: false,
+  isSecretModeEnabled: false,
+  isSessionUnlocked: false,
   calendarSettings: {
     showOvulation: true,
     showFertile: true,
@@ -104,6 +112,8 @@ const initialState: PeriodState = {
   waterLogs: {},
   hasRated: false,
   lastRatingPromptDate: null,
+  isLockEnabled: false,
+  pin: null,
 };
 
 const periodSlice = createSlice({
@@ -155,10 +165,10 @@ const periodSlice = createSlice({
     setSexInterests(state, action: PayloadAction<string[]>) {
       state.sexInterests = action.payload;
     },
-    setHeight(state, action: PayloadAction<{ value: number; unit: 'cm' | 'ft' }>) {
+    setHeight(state, action: PayloadAction<{ value: number; unit: 'cm' | 'ft' } | null>) {
       state.height = action.payload;
     },
-    setWeight(state, action: PayloadAction<{ value: number; unit: 'kg' | 'lb' }>) {
+    setWeight(state, action: PayloadAction<{ value: number; unit: 'kg' | 'lb' } | null>) {
       state.weight = action.payload;
     },
     logDay(state, action: PayloadAction<{ date: string; log: DailyLog }>) {
@@ -190,6 +200,12 @@ const periodSlice = createSlice({
     setPregnant: (state, action: PayloadAction<boolean>) => {
       state.isPregnant = action.payload;
     },
+    setSecretModeEnabled: (state, action: PayloadAction<boolean>) => {
+      state.isSecretModeEnabled = action.payload;
+    },
+    unlockSession: (state) => {
+      state.isSessionUnlocked = true;
+    },
     updateCalendarSettings: (state, action: PayloadAction<Partial<PeriodState['calendarSettings']>>) => {
       state.calendarSettings = { ...state.calendarSettings, ...action.payload };
     },
@@ -204,6 +220,12 @@ const periodSlice = createSlice({
     },
     setLastRatingPromptDate(state, action: PayloadAction<string>) {
       state.lastRatingPromptDate = action.payload;
+    },
+    setLockEnabled(state, action: PayloadAction<boolean>) {
+      state.isLockEnabled = action.payload;
+    },
+    setPin(state, action: PayloadAction<string | null>) {
+      state.pin = action.payload;
     },
   },
 });
@@ -233,12 +255,16 @@ export const {
   resetOnboarding,
   updatePeriodData,
   setPremium,
+  setPregnant,
+  setSecretModeEnabled,
+  unlockSession,
+  updateCalendarSettings,
   logWeight,
   logWater,
   setHasRated,
   setLastRatingPromptDate,
-  setPregnant,
-  updateCalendarSettings,
+  setLockEnabled,
+  setPin,
 } = periodSlice.actions;
 
 export default periodSlice.reducer;

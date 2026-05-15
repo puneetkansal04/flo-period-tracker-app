@@ -37,7 +37,7 @@ export default function GoalScreen() {
     console.log('Goal selected:', selected);
     if (selected) {
       console.log('Pushing route directly...');
-      // dispatch(setGoal(selected));
+      dispatch(setGoal(selected));
       router.push('/onboarding/birth-year');
     }
   };

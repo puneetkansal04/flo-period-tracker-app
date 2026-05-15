@@ -17,38 +17,49 @@ try {
 
 export async function scheduleDailyReminder() {
   if (Platform.OS === 'web') return;
-  
-  await Notifications.cancelAllScheduledNotificationsAsync();
-  
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: "How's your day going? 🌸",
-      body: "Take a moment to log your symptoms and moods.",
-    },
-    trigger: {
-      hour: 20,
-      minute: 0,
-      repeats: true,
-    } as Notifications.NotificationTriggerInput,
-  });
+  try {
+    await Notifications.cancelAllScheduledNotificationsAsync();
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "How's your day going? 🌸",
+        body: "Take a moment to log your symptoms and moods.",
+      },
+      trigger: {
+        hour: 20,
+        minute: 0,
+        repeats: true,
+      } as Notifications.NotificationTriggerInput,
+    });
+  } catch (e) {
+    console.warn("Failed to schedule daily reminder:", e);
+  }
 }
 
 export async function registerForPushNotificationsAsync() {
-  return null;
+  try {
+    if (Platform.OS === 'web') return null;
+    return null;
+  } catch (e) {
+    return null;
+  }
 }
 
 export async function scheduleCycleNotifications(daysUntilPeriod: number) {
   if (Platform.OS === 'web') return;
-  if (daysUntilPeriod <= 1) {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "Period starting soon 🌸",
-        body: "Your period is predicted to start tomorrow. Get ready!",
-      },
-      trigger: { 
-        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-        seconds: 5 
-      }, // Immediate for testing, or set a specific time
-    });
+  try {
+    if (daysUntilPeriod <= 1) {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Period starting soon 🌸",
+          body: "Your period is predicted to start tomorrow. Get ready!",
+        },
+        trigger: { 
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: 5 
+        },
+      });
+    }
+  } catch (e) {
+    console.warn("Failed to schedule cycle notifications:", e);
   }
 }

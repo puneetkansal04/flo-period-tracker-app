@@ -3,15 +3,19 @@ import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import periodReducer from './slices/periodSlice';
 
+const periodPersistConfig = {
+  key: 'period',
+  storage: AsyncStorage,
+  blacklist: ['isSessionUnlocked'],
+};
+
 const rootReducer = combineReducers({
-  period: periodReducer,
+  period: persistReducer(periodPersistConfig, periodReducer),
 });
 
 const persistConfig = {
   key: 'root',
   storage: AsyncStorage,
-  // You can whitelist or blacklist slices here
-  // whitelist: ['period'],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

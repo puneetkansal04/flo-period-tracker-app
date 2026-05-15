@@ -17,18 +17,24 @@ SplashScreen.preventAutoHideAsync();
 function NavigationGuard() {
   const segments = useSegments();
   const router = useRouter();
-  const onboardingComplete = useSelector((state: RootState) => state.period.onboardingComplete);
+  const { onboardingComplete, isSecretModeEnabled, isSessionUnlocked } = useSelector((state: RootState) => state.period);
 
   useEffect(() => {
     const inTabsGroup = segments[0] === '(tabs)';
     const inOnboarding = segments[0] === 'onboarding';
+    const inDisguise = segments[0] === 'disguise';
 
-    if (!onboardingComplete && !inOnboarding) {
-      router.replace('/onboarding');
-    } else if (onboardingComplete && inOnboarding) {
-      router.replace('/(tabs)');
+    if (!onboardingComplete) {
+      if (!inOnboarding) router.replace('/onboarding');
+    } else {
+      // Onboarding complete
+      if (isSecretModeEnabled && !isSessionUnlocked) {
+        if (!inDisguise) router.replace('/disguise');
+      } else if (inOnboarding || inDisguise) {
+        router.replace('/(tabs)');
+      }
     }
-  }, [onboardingComplete, segments]);
+  }, [onboardingComplete, isSecretModeEnabled, isSessionUnlocked, segments]);
 
   return null;
 }
@@ -72,6 +78,8 @@ export default function RootLayout() {
             <Stack.Screen name="post-detail" options={{ presentation: 'modal', headerShown: false }} />
             <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
             <Stack.Screen name="calendar-settings" options={{ headerShown: false }} />
+            <Stack.Screen name="disguise" options={{ headerShown: false }} />
+            <Stack.Screen name="cycle-syncing" options={{ headerShown: false }} />
           </Stack>
           <StatusBar style="auto" backgroundColor="#FFFFFF" />
         </ThemeProvider>

@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar, Switch, Alert } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store';
-import { setGoal, resetOnboarding, GoalType, setPregnant } from '@/store/slices/periodSlice';
+import { setGoal, resetOnboarding, GoalType, setPregnant, setLockEnabled } from '@/store/slices/periodSlice';
 import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -41,7 +41,7 @@ const GOALS: { key: GoalType; label: string; emoji: string }[] = [
 export default function SettingsScreen() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const { goal, cycleLength, periodLength, birthYear, isPregnant } = useSelector((s: RootState) => s.period);
+  const { goal, cycleLength, periodLength, birthYear, isPregnant, isLockEnabled } = useSelector((s: RootState) => s.period);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [remindersEnabled, setRemindersEnabled] = useState(true);
 
@@ -138,6 +138,44 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Security & Privacy */}
+        <View style={styles.sectionGroup}>
+          <Text style={styles.sectionGroupTitle}>Security & Privacy</Text>
+          <View style={styles.card}>
+            <View style={styles.settingRow}>
+              <View style={[styles.settingIcon, { backgroundColor: '#F0F9FF' }]}>
+                <Ionicons name="lock-closed-outline" size={20} color="#0EA5E9" />
+              </View>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingLabel}>PIN Lock</Text>
+                <Text style={styles.settingSubtitle}>Secure your data with a PIN</Text>
+              </View>
+              <Switch 
+                value={isLockEnabled} 
+                onValueChange={(val) => { dispatch(setLockEnabled(val)); if(val) Alert.alert("PIN Setup", "PIN lock will be enabled. Please remember your device's security PIN."); }}
+                trackColor={{ false: Colors.lightGray, true: Colors.primary + '80' }}
+                thumbColor={isLockEnabled ? Colors.primary : Colors.borderDark}
+              />
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.settingRow}>
+              <View style={[styles.settingIcon, { backgroundColor: '#F0FDF4' }]}>
+                <Ionicons name="eye-off-outline" size={20} color="#16A34A" />
+              </View>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingLabel}>Secret Mode</Text>
+                <Text style={styles.settingSubtitle}>Calculator disguise for privacy</Text>
+              </View>
+              <Switch 
+                value={isSecretModeEnabled} 
+                onValueChange={(val) => dispatch(setSecretModeEnabled(val))}
+                trackColor={{ false: Colors.lightGray, true: Colors.primary + '80' }}
+                thumbColor={isSecretModeEnabled ? Colors.primary : Colors.borderDark}
+              />
+            </View>
+          </View>
+        </View>
+
         {/* Cycle Settings */}
         <View style={styles.sectionGroup}>
           <Text style={styles.sectionGroupTitle}>Cycle settings</Text>
@@ -210,7 +248,9 @@ export default function SettingsScreen() {
               label="Rate the app"
               color={Colors.orange}
               onPress={() => {
-                Alert.alert("Rate us", "Thank you for using Serene Cycle!");
+                const pkg = "com.puneetkansal04.flo";
+                const url = `https://play.google.com/store/apps/details?id=${pkg}`;
+                require('react-native').Linking.openURL(url);
               }}
             />
           </View>

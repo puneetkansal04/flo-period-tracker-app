@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -9,13 +9,22 @@ import { updateCalendarSettings } from '@/store/slices/periodSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store';
 
+const DEFAULT_SETTINGS = {
+  showOvulation: true,
+  showFertile: true,
+  showPregnancyChance: true,
+  firstDayMonday: false,
+};
+
 export default function CalendarSettingsScreen() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const { calendarSettings } = useSelector((state: RootState) => state.period);
+  const { calendarSettings } = useSelector((state: RootState) => state.period) || {};
 
-  const toggleSetting = (key: keyof typeof calendarSettings) => {
-    dispatch(updateCalendarSettings({ [key]: !calendarSettings[key] }));
+  const safeSettings = { ...DEFAULT_SETTINGS, ...calendarSettings };
+
+  const toggleSetting = (key: keyof typeof DEFAULT_SETTINGS) => {
+    dispatch(updateCalendarSettings({ [key]: !safeSettings[key] }));
   };
 
   return (
@@ -39,10 +48,10 @@ export default function CalendarSettingsScreen() {
                 <Text style={styles.rowSub}>Mark predicted ovulation day</Text>
               </View>
               <Switch 
-                value={calendarSettings.showOvulation} 
+                value={safeSettings.showOvulation} 
                 onValueChange={() => toggleSetting('showOvulation')}
                 trackColor={{ false: Colors.lightGray, true: Colors.primary + '80' }}
-                thumbColor={calendarSettings.showOvulation ? Colors.primary : Colors.borderDark}
+                thumbColor={safeSettings.showOvulation ? Colors.primary : Colors.borderDark}
               />
             </View>
             <View style={styles.divider} />
@@ -52,10 +61,10 @@ export default function CalendarSettingsScreen() {
                 <Text style={styles.rowSub}>Highlight high-fertility days</Text>
               </View>
               <Switch 
-                value={calendarSettings.showFertile} 
+                value={safeSettings.showFertile} 
                 onValueChange={() => toggleSetting('showFertile')}
                 trackColor={{ false: Colors.lightGray, true: Colors.primary + '80' }}
-                thumbColor={calendarSettings.showFertile ? Colors.primary : Colors.borderDark}
+                thumbColor={safeSettings.showFertile ? Colors.primary : Colors.borderDark}
               />
             </View>
             <View style={styles.divider} />
@@ -65,10 +74,10 @@ export default function CalendarSettingsScreen() {
                 <Text style={styles.rowSub}>Show daily health tips</Text>
               </View>
               <Switch 
-                value={calendarSettings.showPregnancyChance} 
+                value={safeSettings.showPregnancyChance} 
                 onValueChange={() => toggleSetting('showPregnancyChance')}
                 trackColor={{ false: Colors.lightGray, true: Colors.primary + '80' }}
-                thumbColor={calendarSettings.showPregnancyChance ? Colors.primary : Colors.borderDark}
+                thumbColor={safeSettings.showPregnancyChance ? Colors.primary : Colors.borderDark}
               />
             </View>
           </View>
@@ -82,10 +91,10 @@ export default function CalendarSettingsScreen() {
                 <Text style={styles.rowLabel}>Week Starts on Monday</Text>
               </View>
               <Switch 
-                value={calendarSettings.firstDayMonday} 
+                value={safeSettings.firstDayMonday} 
                 onValueChange={() => toggleSetting('firstDayMonday')}
                 trackColor={{ false: Colors.lightGray, true: Colors.primary + '80' }}
-                thumbColor={calendarSettings.firstDayMonday ? Colors.primary : Colors.borderDark}
+                thumbColor={safeSettings.firstDayMonday ? Colors.primary : Colors.borderDark}
               />
             </View>
           </View>

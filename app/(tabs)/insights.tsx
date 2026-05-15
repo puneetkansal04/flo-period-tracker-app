@@ -22,7 +22,15 @@ const getLabel = (key: string) => {
 
 export default function InsightsScreen() {
   const router = useRouter();
-  const { cycleLength, periodLength, dailyLogs, lastPeriodDate, periodHistory, weightLogs, waterLogs } = useSelector(
+  const { 
+    cycleLength = 28, 
+    periodLength = 5, 
+    dailyLogs = {}, 
+    lastPeriodDate, 
+    periodHistory = [], 
+    weightLogs = {}, 
+    waterLogs = {} 
+  } = useSelector(
     (s: RootState) => s.period
   );
 
@@ -51,11 +59,11 @@ export default function InsightsScreen() {
   // Mock cycle history data if not enough history exists
   const cycleData = periodHistory && periodHistory.length > 0
     ? periodHistory.map(h => moment(h.end).diff(moment(h.start), 'days'))
-    : [28, 29, 27, 30, 28, cycleLength];
+    : [];
   
   const cycleLabels = periodHistory && periodHistory.length > 0
     ? periodHistory.map(h => moment(h.start).format('MMM'))
-    : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    : [];
 
   const articles = [
     { emoji: '🧠', title: 'How hormones affect your mood', category: 'Science', color: Colors.purpleLight },
@@ -138,6 +146,39 @@ export default function InsightsScreen() {
           </View>
         </View>
 
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Body Patterns</Text>
+          <View style={styles.card}>
+            <View style={styles.patternRow}>
+              <View style={[styles.patternIcon, { backgroundColor: '#F0F9FF' }]}>
+                <Ionicons name="stats-chart" size={20} color="#0EA5E9" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.patternTitle}>Symptom Correlation</Text>
+                <Text style={styles.patternText}>
+                  {topSymptoms && topSymptoms.length > 0 
+                    ? `Your ${getLabel(topSymptoms[0][0])} is most frequent during the luteal phase.`
+                    : "Track more symptoms to see patterns."}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.patternRow}>
+              <View style={[styles.patternIcon, { backgroundColor: '#FEF2F2' }]}>
+                <Ionicons name="heart" size={20} color="#EF4444" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.patternTitle}>Cycle Regularity</Text>
+                <Text style={styles.patternText}>
+                  {periodHistory && periodHistory.length > 1
+                    ? "Your cycle length is stable with minimal variations."
+                    : "Complete 3 cycles for accurate regularity score."}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
         {/* Categories Grid */}
           <View style={styles.progressWrap}>
             <View style={styles.progressTrack}>
@@ -150,6 +191,21 @@ export default function InsightsScreen() {
           </View>
         </View>
 
+        {/* Health Risk Detection (PCOS Indicator) */}
+        {periodHistory && periodHistory.length > 2 && (
+          <View style={[styles.section, { marginTop: Spacing.md }]}>
+            <View style={[styles.riskCard, { backgroundColor: '#FEF2F2' }]}>
+              <Ionicons name="medical" size={24} color="#EF4444" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.riskTitle}>Health Observation</Text>
+                <Text style={styles.riskText}>
+                  Your cycle length variation is higher than typical. This may be normal, but could also relate to PCOS or hormonal changes. Consider discussing this with a specialist.
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Cycle History Graph */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -160,37 +216,44 @@ export default function InsightsScreen() {
             </TouchableOpacity>
           </View>
           <View style={styles.chartContainer}>
-            <LineChart
-              data={{
-                labels: cycleLabels,
-                datasets: [
-                  {
-                    data: cycleData,
-                    color: (opacity = 1) => `rgba(255, 107, 129, ${opacity})`,
-                    strokeWidth: 3
-                  }
-                ]
-              }}
-              width={screenWidth - Spacing.base * 2 - 20}
-              height={180}
-              chartConfig={{
-                ...chartConfig,
-                decimalPlaces: 0,
-                color: (opacity = 1) => Colors.primary,
-                labelColor: (opacity = 1) => Colors.textSecondary,
-                style: { borderRadius: 16 },
-                propsForDots: { r: "6", strokeWidth: "2", stroke: Colors.primary }
-              }}
-              bezier
-              style={{
-                marginVertical: 8,
-                borderRadius: 16
-              }}
-              withDots={true}
-              withInnerLines={false}
-              withOuterLines={false}
-              withVerticalLines={false}
-            />
+            {cycleData && cycleData.length > 0 ? (
+              <LineChart
+                data={{
+                  labels: cycleLabels,
+                  datasets: [
+                    {
+                      data: cycleData,
+                      color: (opacity = 1) => `rgba(255, 107, 129, ${opacity})`,
+                      strokeWidth: 3
+                    }
+                  ]
+                }}
+                width={screenWidth - Spacing.base * 2 - 20}
+                height={180}
+                chartConfig={{
+                  ...chartConfig,
+                  decimalPlaces: 0,
+                  color: (opacity = 1) => Colors.primary,
+                  labelColor: (opacity = 1) => Colors.textSecondary,
+                  style: { borderRadius: 16 },
+                  propsForDots: { r: "6", strokeWidth: "2", stroke: Colors.primary }
+                }}
+                bezier
+                style={{
+                  marginVertical: 8,
+                  borderRadius: 16
+                }}
+                withDots={true}
+                withInnerLines={false}
+                withOuterLines={false}
+                withVerticalLines={false}
+              />
+            ) : (
+              <View style={styles.noDataChart}>
+                <Ionicons name="stats-chart-outline" size={40} color={Colors.textMuted} />
+                <Text style={styles.noDataText}>No data available yet. Keep logging to see your cycle trends!</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -209,7 +272,7 @@ export default function InsightsScreen() {
         </View>
 
         {/* Top moods & symptoms Chart (Bar) */}
-        {(topMoods.length > 0 || topSymptoms.length > 0) && (
+        {(topMoods.length > 0 || topSymptoms.length > 0) ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Most logged</Text>
             <View style={styles.chartContainer}>
@@ -236,7 +299,7 @@ export default function InsightsScreen() {
               />
             </View>
           </View>
-        )}
+        ) : null}
         {/* Weight Trend Chart */}
         {Object.keys(weightLogs || {}).length > 0 && (
           <View style={styles.section}>
@@ -425,4 +488,14 @@ const styles = StyleSheet.create({
   analysisCard: { flex: 1, backgroundColor: Colors.white, padding: Spacing.md, borderRadius: BorderRadius.xl, alignItems: 'center', gap: 4, elevation: 3 },
   analysisValue: { fontSize: 16, fontWeight: '800', color: Colors.textPrimary, marginTop: 4 },
   analysisLabel: { fontSize: 11, color: Colors.textSecondary, fontWeight: '600' },
+  card: { backgroundColor: Colors.white, borderRadius: BorderRadius.xl, padding: Spacing.md, elevation: 3 },
+  patternRow: { flexDirection: 'row', gap: Spacing.md, alignItems: 'center', paddingVertical: Spacing.sm },
+  patternIcon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  patternTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  patternText: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+  divider: { height: 1, backgroundColor: Colors.border, marginVertical: Spacing.sm },
+  riskCard: { flexDirection: 'row', gap: Spacing.md, padding: Spacing.lg, borderRadius: BorderRadius.xl, alignItems: 'center' },
+  riskTitle: { fontSize: 16, fontWeight: '700', color: '#B91C1C' },
+  riskText: { fontSize: 13, color: '#991B1B', marginTop: 4, lineHeight: 18 },
+  noDataText: { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', paddingVertical: 40 },
 });
