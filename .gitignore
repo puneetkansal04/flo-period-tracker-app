@@ -41,5 +41,9 @@ app-example
 # generated native folders
 /ios
 /android
-*.png
+# Ignore temporary logs and diagnostic screenshots
 *.log
+screen_*.png
+view_*.xml
+window_dump.xml
+target_app.png
