@@ -17,8 +17,6 @@ export default function PaywallScreen() {
   const router = useRouter();
   const dispatch = useDispatch();
   
-  const { connected, requestPurchase, getSubscriptions, subscriptions: iapSubscriptions } = useIAP();
-  
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
   
@@ -32,33 +30,66 @@ export default function PaywallScreen() {
     setAlertVisible(true);
   };
 
+  const { connected, fetchProducts: fetchIapProducts, subscriptions: iapSubscriptions, requestPurchase: requestIapPurchaseFromHook } = useIAP({
+    onPurchaseSuccess: async (purchase) => {
+      console.log('[Paywall] Purchase success from hook:', purchase);
+      dispatch(setPremium(true));
+      showAlert('🎉 Purchase Successful!', 'You are now a Premium user!');
+      setLoading(false);
+      router.back();
+    },
+    onPurchaseError: (error) => {
+      console.error('[Paywall] Purchase error from hook:', error);
+      if (error.code === 'E_USER_CANCELLED') {
+        showAlert('Cancelled', 'You have cancelled the operation.');
+      } else {
+        showAlert('Purchase Failed', error.message || 'Please try again.');
+      }
+      setLoading(false);
+    },
+  });
+
   useEffect(() => {
     if (connected) {
-      try {
-        getSubscriptions({ skus: [SKU.PREMIUM] });
-      } catch (err: any) {
-        console.warn('getSubscriptions error:', err.message);
-      }
+      const fetchIAPData = async () => {
+        try {
+          await fetchIapProducts({ skus: [SKU.PREMIUM], type: 'subs' });
+          console.log('[Paywall] Subscriptions fetch requested');
+        } catch (err) {
+          console.error('[Paywall] Error fetching subscriptions:', err);
+        }
+      };
+      fetchIAPData();
     }
-  }, [connected, getSubscriptions]);
+  }, [connected]);
 
   const handleSubscribe = async () => {
     setLoading(true);
+    const sku = SKU.PREMIUM;
     try {
+      let offers = [];
       const selectedBasePlanId = selectedPlan === 'monthly' ? BASE_PLANS.MONTHLY : BASE_PLANS.ANNUAL;
       
-      await requestPurchase({
-        sku: SKU.PREMIUM,
-        subscriptionOffers: [{
-          productId: SKU.PREMIUM,
-          basePlanId: selectedBasePlanId,
-        }]
-      });
-    } catch (err: any) {
-      if (err.code !== 'E_USER_CANCELLED') {
-        showAlert('Subscription Error', err.message);
+      const sub = iapSubscriptions.find(s => s.productId === sku);
+      if (sub && sub.subscriptionOfferDetails && sub.subscriptionOfferDetails.length > 0) {
+        const offer = sub.subscriptionOfferDetails.find(o => o.basePlanId === selectedBasePlanId);
+        if (offer) {
+          offers = [{ sku, offerToken: offer.offerToken }];
+        }
       }
-    } finally {
+
+      console.log('[Paywall] Requesting subscription for SKU:', sku, 'with offers:', JSON.stringify(offers));
+      await requestIapPurchaseFromHook({
+        request: {
+          google: { skus: [sku], subscriptionOffers: offers }
+        },
+        type: 'subs'
+      });
+    } catch (error: any) {
+      console.error('[Paywall] Subscription request error:', error);
+      if (error.code !== 'E_USER_CANCELLED') {
+        showAlert('Purchase Failed', error.message || 'Please try again.');
+      }
       setLoading(false);
     }
   };
@@ -166,6 +197,7 @@ export default function PaywallScreen() {
           <Text style={styles.termsText}>
             By continuing, you agree to our Terms of Use and Privacy Policy. Subscription automatically renews unless auto-renew is turned off at least 24-hours before the end of the current period.
           </Text>
+        </View>
         <CustomAlert
           visible={alertVisible}
           title={alertTitle}
