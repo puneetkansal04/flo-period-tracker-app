@@ -128,19 +128,26 @@ export default function PaywallScreen() {
           </TouchableOpacity>
           {!isPremium && (
             <TouchableOpacity onPress={async () => {
+              setLoading(true);
               try {
                 const purchases = await IAPService.restorePurchases();
                 if (purchases && purchases.length > 0) {
-                  // If restoring, we might not know the exact plan type easily from RNIap without parsing
-                  // but we can at least set it to premium.
-                  dispatch(setPremium(true));
-                  showAlert('Success', 'Your premium subscription has been restored.');
-                  router.back();
+                  const hasPremium = purchases.some(p => p.productId === SKU.PREMIUM);
+                  if (hasPremium) {
+                    dispatch(setPremium(true));
+                    showAlert('Success', 'Your premium subscription has been restored.');
+                    setTimeout(() => router.back(), 1500);
+                  } else {
+                    showAlert('Info', 'No active premium subscription found in your account.');
+                  }
                 } else {
                   showAlert('Info', 'No active subscriptions found to restore.');
                 }
               } catch (err) {
-                showAlert('Error', 'Failed to restore purchases.');
+                console.error('[Paywall] Restore error:', err);
+                showAlert('Error', 'Failed to restore purchases. Please try again.');
+              } finally {
+                setLoading(false);
               }
             }}>
               <Text style={styles.restoreText}>Restore</Text>

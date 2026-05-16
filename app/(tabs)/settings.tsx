@@ -7,6 +7,7 @@ import { setGoal, resetOnboarding, GoalType, setPregnant, setLockEnabled } from 
 import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { CustomAlert } from '@/components/CustomAlert';
 
 type SettingRowProps = {
   icon: React.ReactNode;
@@ -45,18 +46,29 @@ export default function SettingsScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [remindersEnabled, setRemindersEnabled] = useState(true);
 
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertConfirmText, setAlertConfirmText] = useState<string | undefined>(undefined);
+  const [onConfirmAction, setOnConfirmAction] = useState<(() => void) | undefined>(undefined);
+
+  const showCustomAlert = (title: string, message: string, confirmText?: string, onConfirm?: () => void) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertConfirmText(confirmText);
+    setOnConfirmAction(() => onConfirm);
+    setAlertVisible(true);
+  };
+
   const handleResetOnboarding = () => {
-    Alert.alert(
+    showCustomAlert(
       'Reset Onboarding',
-      'This will reset your onboarding data and you will need to set up the app again.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: () => dispatch(resetOnboarding()),
-        },
-      ]
+      'This will reset your onboarding data and you will need to set up the app again. Are you sure?',
+      'Reset',
+      () => {
+        dispatch(resetOnboarding());
+        setAlertVisible(false);
+      }
     );
   };
 
@@ -152,7 +164,10 @@ export default function SettingsScreen() {
               </View>
               <Switch 
                 value={isLockEnabled} 
-                onValueChange={(val) => { dispatch(setLockEnabled(val)); if(val) Alert.alert("PIN Setup", "PIN lock will be enabled. Please remember your device's security PIN."); }}
+                onValueChange={(val) => { 
+                  dispatch(setLockEnabled(val)); 
+                  if(val) showCustomAlert("PIN Setup", "PIN lock will be enabled. Please remember your device's security PIN."); 
+                }}
                 trackColor={{ false: Colors.lightGray, true: Colors.primary + '80' }}
                 thumbColor={isLockEnabled ? Colors.primary : Colors.borderDark}
               />
@@ -232,9 +247,25 @@ export default function SettingsScreen() {
               label="Rate the app"
               color={Colors.orange}
               onPress={() => {
-                const pkg = "com.puneetkansal04.flo";
-                const url = `https://play.google.com/store/apps/details?id=${pkg}`;
-                Linking.openURL(url);
+                const pkg = "com.serene.cycle.tracker";
+                const url = Platform.select({
+                  ios: `itms-apps://itunes.apple.com/app/idYOUR_APPLE_ID?action=write-review`,
+                  android: `market://details?id=${pkg}`,
+                  default: `https://play.google.com/store/apps/details?id=${pkg}`,
+                });
+                if (url) {
+                  Linking.canOpenURL(url).then(supported => {
+                    if (supported) {
+                      Linking.openURL(url);
+                    } else {
+                      // Fallback to browser link if market/itms-apps not supported
+                      const browserUrl = Platform.OS === 'ios'
+                        ? `https://apps.apple.com/app/idYOUR_APPLE_ID`
+                        : `https://play.google.com/store/apps/details?id=${pkg}`;
+                      Linking.openURL(browserUrl);
+                    }
+                  });
+                }
               }}
             />
           </View>
@@ -256,6 +287,15 @@ export default function SettingsScreen() {
         <Text style={styles.version}>Serene Cycle v1.0.0 · Made with ❤️</Text>
         <View style={{ height: 30 }} />
       </ScrollView>
+
+      <CustomAlert
+        visible={alertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        confirmText={alertConfirmText}
+        onConfirm={onConfirmAction}
+        onClose={() => setAlertVisible(false)}
+      />
     </SafeAreaView>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Switch, Modal, Platform, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Switch, Modal, Platform, StatusBar, KeyboardAvoidingView } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { Colors, BorderRadius, Spacing, Shadows } from '@/constants/FloColors';
 import { Ionicons } from '@expo/vector-icons';
@@ -152,56 +152,62 @@ export default function AlarmsScreen() {
 
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Set Alarm</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={24} color={Colors.textMuted} />
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ width: '100%' }}
+          >
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Set Alarm</Text>
+                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                  <Ionicons name="close" size={24} color={Colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+              
+              <Text style={styles.inputLabel}>Task Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., Morning Yoga"
+                value={newTitle}
+                onChangeText={setNewTitle}
+                placeholderTextColor={Colors.textMuted}
+                autoFocus={false}
+              />
+              
+              <Text style={styles.inputLabel}>Reminder Time</Text>
+              <TouchableOpacity 
+                style={styles.timeSelector} 
+                onPress={() => setShowTimePicker(true)}
+              >
+                <Ionicons name="time-outline" size={20} color={Colors.primary} />
+                <Text style={styles.timeSelectorValue}>{moment(newTime).format('hh:mm A')}</Text>
+              </TouchableOpacity>
+  
+              {showTimePicker && (() => {
+                try {
+                  const DateTimePicker = require('@react-native-community/datetimepicker').default;
+                  return (
+                    <DateTimePicker
+                      value={newTime}
+                      mode="time"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      is24Hour={false}
+                      onChange={(event, date) => {
+                        setShowTimePicker(Platform.OS === 'ios');
+                        if (date) setNewTime(date);
+                      }}
+                    />
+                  );
+                } catch (e) {
+                  return <Text style={styles.errorText}>Time picker unavailable. Using current time.</Text>;
+                }
+              })()}
+  
+              <TouchableOpacity style={styles.saveBtn} onPress={addAlarm}>
+                <Text style={styles.saveBtnText}>Activate Alarm</Text>
               </TouchableOpacity>
             </View>
-            
-            <Text style={styles.inputLabel}>Task Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., Morning Yoga"
-              value={newTitle}
-              onChangeText={setNewTitle}
-              placeholderTextColor={Colors.textMuted}
-            />
-            
-            <Text style={styles.inputLabel}>Reminder Time</Text>
-            <TouchableOpacity 
-              style={styles.timeSelector} 
-              onPress={() => setShowTimePicker(true)}
-            >
-              <Ionicons name="time-outline" size={20} color={Colors.primary} />
-              <Text style={styles.timeSelectorValue}>{moment(newTime).format('hh:mm A')}</Text>
-            </TouchableOpacity>
-
-            {showTimePicker && (() => {
-              try {
-                const DateTimePicker = require('@react-native-community/datetimepicker').default;
-                return (
-                  <DateTimePicker
-                    value={newTime}
-                    mode="time"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    is24Hour={false}
-                    onChange={(event, date) => {
-                      setShowTimePicker(Platform.OS === 'ios');
-                      if (date) setNewTime(date);
-                    }}
-                  />
-                );
-              } catch (e) {
-                return <Text style={styles.errorText}>Time picker unavailable. Using current time.</Text>;
-              }
-            })()}
-
-            <TouchableOpacity style={styles.saveBtn} onPress={addAlarm}>
-              <Text style={styles.saveBtnText}>Activate Alarm</Text>
-            </TouchableOpacity>
-          </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
     </SafeAreaView>

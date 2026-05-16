@@ -93,7 +93,22 @@ export const IAPService = {
 
   restorePurchases: async () => {
     try {
-      return await RNIap.getAvailablePurchases();
+      console.log('[IAP] Restoring purchases...');
+      const purchases = await RNIap.getAvailablePurchases();
+      console.log('[IAP] Available purchases:', purchases);
+      
+      if (purchases && purchases.length > 0) {
+        for (const purchase of purchases) {
+          // If a purchase exists but isn't acknowledged/finished, finish it now
+          if (!purchase.transactionReceipt) continue;
+          try {
+            await RNIap.finishTransaction({ purchase, isConsumable: false });
+          } catch (e) {
+            console.warn('[IAP] Error finishing restored transaction:', e);
+          }
+        }
+      }
+      return purchases;
     } catch (err: any) {
       console.warn('[IAP] restorePurchases error:', err.message);
       return [];

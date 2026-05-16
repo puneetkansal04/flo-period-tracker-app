@@ -7,18 +7,30 @@ interface CustomAlertProps {
   title: string;
   message: string;
   onClose: () => void;
+  confirmText?: string;
+  onConfirm?: () => void;
 }
 
-export const CustomAlert: React.FC<CustomAlertProps> = ({ visible, title, message, onClose }) => {
+export const CustomAlert: React.FC<CustomAlertProps> = ({ visible, title, message, onClose, confirmText, onConfirm }) => {
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
         <View style={styles.alertBox}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
-          <TouchableOpacity style={styles.button} onPress={onClose}>
-            <Text style={styles.buttonText}>OK</Text>
-          </TouchableOpacity>
+          <View style={styles.buttonContainer}>
+            {confirmText && onConfirm && (
+              <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity 
+              style={[styles.button, confirmText ? styles.confirmButton : { width: '100%' }]} 
+              onPress={onConfirm || onClose}
+            >
+              <Text style={styles.buttonText}>{confirmText || 'OK'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
@@ -58,16 +70,32 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
     lineHeight: 20,
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    width: '100%',
+  },
   button: {
     backgroundColor: Colors.primary,
     paddingVertical: 12,
-    paddingHorizontal: 30,
+    paddingHorizontal: 20,
     borderRadius: BorderRadius.full,
-    width: '100%',
+    flex: 1,
     alignItems: 'center',
+  },
+  confirmButton: {
+    backgroundColor: Colors.primary,
+  },
+  cancelButton: {
+    backgroundColor: Colors.lightGray,
   },
   buttonText: {
     color: Colors.white,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  cancelButtonText: {
+    color: Colors.textSecondary,
     fontSize: 16,
     fontWeight: '700',
   },
