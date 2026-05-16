@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.puneetkansal04.flo"
+      "bundleIdentifier": "com.serene.cycle.tracker"
     },
     "android": {
       "adaptiveIcon": {
