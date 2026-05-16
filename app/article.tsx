@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
 import { SafeAreaView as SafeAreaContext } from 'react-native-safe-area-context';
@@ -8,6 +10,8 @@ import { SafeAreaView as SafeAreaContext } from 'react-native-safe-area-context'
 export default function ArticleScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const isPremium = useSelector((state: RootState) => state.period.isPremium);
+  
   const title = params.title as string || 'Article';
   const category = params.category as string || 'Education';
   const emoji = params.emoji as string || '📚';
@@ -56,14 +60,17 @@ export default function ArticleScreen() {
           {"\n"}• Consult your healthcare provider if you experience severe discomfort.
         </Text>
 
-        <TouchableOpacity style={styles.premiumBanner} onPress={() => router.push('/paywall')}>
-          <Text style={styles.premiumBannerText}>Unlock full medical reports with Serene Premium</Text>
-          <Ionicons name="lock-closed" size={16} color={Colors.white} />
-        </TouchableOpacity>
+        {!isPremium && (
+          <TouchableOpacity style={styles.premiumBanner} onPress={() => router.push('/paywall')}>
+            <Text style={styles.premiumBannerText}>Unlock full medical reports with Serene Premium</Text>
+            <Ionicons name="lock-closed" size={16} color={Colors.white} />
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </SafeAreaContext>
   );
 }
+
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.white },

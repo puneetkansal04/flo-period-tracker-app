@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Alert } from 'react-native';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 import { Colors, BorderRadius, Spacing } from '@/constants/FloColors';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -41,17 +43,29 @@ const MOCK_POSTS = [
   }
 ];
 
+
 export default function CommunityScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('For You');
+  const isPremium = useSelector((state: RootState) => state.period.isPremium);
+
+  const handleAction = () => {
+    if (isPremium) {
+      Alert.alert('Coming Soon', 'The ability to create posts is coming in the next update!');
+    } else {
+      router.push('/paywall');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Secret Chats</Text>
-        <TouchableOpacity style={styles.premiumIcon} onPress={() => router.push('/paywall')}>
-          <Text style={styles.premiumText}>✨</Text>
-        </TouchableOpacity>
+        {!isPremium && (
+          <TouchableOpacity style={styles.premiumIcon} onPress={() => router.push('/paywall')}>
+            <Text style={styles.premiumText}>✨</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.searchContainer}>
@@ -82,11 +96,12 @@ export default function CommunityScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         
         {/* Create post prompt */}
-        <TouchableOpacity style={styles.createPostCard} onPress={() => router.push('/paywall')}>
+        <TouchableOpacity style={styles.createPostCard} onPress={handleAction}>
           <View style={styles.createPostAvatar}><Text style={{color: Colors.white, fontWeight: '700'}}>A</Text></View>
           <Text style={styles.createPostText}>Ask an anonymous question...</Text>
           <Ionicons name="image-outline" size={20} color={Colors.textSecondary} />
         </TouchableOpacity>
+
 
         {/* Posts */}
         {MOCK_POSTS.map(post => (
@@ -124,9 +139,10 @@ export default function CommunityScreen() {
       </ScrollView>
 
       {/* Floating Action Button */}
-      <TouchableOpacity style={styles.fab} onPress={() => router.push('/paywall')}>
+      <TouchableOpacity style={styles.fab} onPress={handleAction}>
         <Ionicons name="add" size={28} color={Colors.white} />
       </TouchableOpacity>
+
     </SafeAreaView>
   );
 }

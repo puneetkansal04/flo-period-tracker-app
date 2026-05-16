@@ -50,6 +50,7 @@ export interface PeriodState {
 
   // Plan
   isPremium: boolean;
+  premiumPlanType: 'monthly' | 'annual' | null;
   isPregnant: boolean;
   isSecretModeEnabled: boolean;
   isSessionUnlocked: boolean;
@@ -99,6 +100,7 @@ const initialState: PeriodState = {
   name: null,
   email: null,
   isPremium: false,
+  premiumPlanType: null,
   isPregnant: false,
   isSecretModeEnabled: false,
   isSessionUnlocked: false,
@@ -115,6 +117,7 @@ const initialState: PeriodState = {
   isLockEnabled: false,
   pin: null,
 };
+
 
 const periodSlice = createSlice({
   name: 'period',
@@ -194,9 +197,17 @@ const periodSlice = createSlice({
     updatePeriodData(state, action: PayloadAction<Partial<PeriodState>>) {
       Object.assign(state, action.payload);
     },
-    setPremium(state, action: PayloadAction<boolean>) {
-      state.isPremium = action.payload;
+    setPremium(state, action: PayloadAction<boolean | { isPremium: boolean; planType?: 'monthly' | 'annual' }>) {
+      if (typeof action.payload === 'boolean') {
+        state.isPremium = action.payload;
+      } else {
+        state.isPremium = action.payload.isPremium;
+        if (action.payload.planType) {
+          state.premiumPlanType = action.payload.planType;
+        }
+      }
     },
+
     setPregnant: (state, action: PayloadAction<boolean>) => {
       state.isPregnant = action.payload;
     },

@@ -51,8 +51,9 @@ export default function HomeScreen() {
           </View>
           <TouchableOpacity style={styles.premiumBadge} onPress={() => router.push('/paywall')}>
             <Ionicons name="sparkles" size={16} color={Colors.white} />
-            <Text style={styles.premiumText}>{isPremium ? 'PREMIUM' : 'GO PREMIUM'}</Text>
+            <Text style={styles.premiumText}>{isPremium ? 'PREMIUM ACTIVE' : 'GO PREMIUM'}</Text>
           </TouchableOpacity>
+
         </View>
 
         {/* Main Progress Circle */}
