@@ -2,7 +2,7 @@
   "expo": {
     "name": "Serene Cycle: Period Tracker",
     "slug": "serene-cycle",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "serene-cycle",
@@ -20,7 +20,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.serene.cycle.tracker",
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "output": "static",
