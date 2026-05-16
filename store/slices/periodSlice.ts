@@ -52,8 +52,6 @@ export interface PeriodState {
   isPremium: boolean;
   premiumPlanType: 'monthly' | 'annual' | null;
   isPregnant: boolean;
-  isSecretModeEnabled: boolean;
-  isSessionUnlocked: boolean;
   calendarSettings: {
     showOvulation: boolean;
     showFertile: boolean;
@@ -102,8 +100,6 @@ const initialState: PeriodState = {
   isPremium: false,
   premiumPlanType: null,
   isPregnant: false,
-  isSecretModeEnabled: false,
-  isSessionUnlocked: false,
   calendarSettings: {
     showOvulation: true,
     showFertile: true,
@@ -211,12 +207,6 @@ const periodSlice = createSlice({
     setPregnant: (state, action: PayloadAction<boolean>) => {
       state.isPregnant = action.payload;
     },
-    setSecretModeEnabled: (state, action: PayloadAction<boolean>) => {
-      state.isSecretModeEnabled = action.payload;
-    },
-    unlockSession: (state) => {
-      state.isSessionUnlocked = true;
-    },
     updateCalendarSettings: (state, action: PayloadAction<Partial<PeriodState['calendarSettings']>>) => {
       state.calendarSettings = { ...state.calendarSettings, ...action.payload };
     },
@@ -267,8 +257,6 @@ export const {
   updatePeriodData,
   setPremium,
   setPregnant,
-  setSecretModeEnabled,
-  unlockSession,
   updateCalendarSettings,
   logWeight,
   logWater,
