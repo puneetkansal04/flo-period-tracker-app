@@ -8,12 +8,36 @@
       "developmentClient": true,
       "distribution": "internal"
     },
+    "development-pro": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "APP_VARIANT": "pro",
+        "EXPO_PUBLIC_APP_VARIANT": "pro"
+      }
+    },
     "preview": {
       "distribution": "internal"
+    },
+    "preview-pro": {
+      "distribution": "internal",
+      "env": {
+        "APP_VARIANT": "pro",
+        "EXPO_PUBLIC_APP_VARIANT": "pro"
+      }
     },
     "production": {
       "android": {
         "buildType": "app-bundle"
+      }
+    },
+    "production-pro": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "APP_VARIANT": "pro",
+        "EXPO_PUBLIC_APP_VARIANT": "pro"
       }
     }
   },
