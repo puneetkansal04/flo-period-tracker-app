@@ -11,6 +11,8 @@ import moment from 'moment';
 
 const { width } = Dimensions.get('window');
 
+let hasPromptedPaywall = false;
+
 export default function HomeScreen() {
   const router = useRouter();
   const { isPremium } = useSelector((s: RootState) => s.period);
@@ -23,10 +25,11 @@ export default function HomeScreen() {
   } = usePeriodTracker();
 
   useEffect(() => {
-    if (!isPremium) {
+    if (!isPremium && !hasPromptedPaywall) {
+      hasPromptedPaywall = true;
       router.push('/paywall');
     }
-  }, [isPremium]);
+  }, [isPremium, router]);
 
   const getTip = () => {
     switch (phase) {

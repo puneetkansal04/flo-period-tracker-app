@@ -41,7 +41,7 @@ export default function BirthYearScreen() {
 
       <View style={styles.container}>
         <Text style={styles.title}>What year were you born?</Text>
-        <Text style={styles.subtitle}>We'll use this to personalize your experience</Text>
+        <Text style={styles.subtitle}>{"We'll use this to personalize your experience"}</Text>
 
         {/* Drum-roll picker */}
         <View style={styles.pickerContainer}>
